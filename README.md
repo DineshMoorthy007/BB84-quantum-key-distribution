@@ -37,26 +37,40 @@ The project aims to demonstrate how quantum mechanics can be used for secure key
 
 ## Project Status
 
-Phase 1 — Environment, project architecture, and configuration setup completed.
+- [x] **Phase 1** — Environment, project architecture, and configuration setup completed.
+- [x] **Phase 2** — Fundamental quantum primitives completed (state preparation for $|0\rangle, |1\rangle, |+\rangle, |-\rangle$, projective $Z$/$X$ measurements, statevector analysis, and comprehensive unit tests).
+- [ ] **Phase 3** — Alice & Bob key generation, quantum channel, and basic protocol simulation (upcoming).
 
 ## Project Structure
 
 ```text
 bb84-quantum-key-distribution/
 ├── docs/            # Protocol documentation and theoretical background
-├── experiments/     # Parametric study and simulation benchmark scripts
+├── experiments/     # Parametric study, benchmarks, and demonstration scripts
 ├── hardware/        # Real quantum device connectors (Qiskit Runtime)
 ├── noise/           # Quantum channel noise models (depolarizing, bit/phase-flip)
 ├── results/         # Output artifacts (simulation logs, datasets, plots)
 ├── simulator/       # Qiskit Aer backend and circuit execution managers
-├── src/             # Core protocol logic and simulation configuration
+├── src/             # Core protocol logic, quantum primitives, and config
 ├── tests/           # Automated pytest test suites
 └── visualization/   # Decoupled plotting routines (Matplotlib)
 ```
 
+## Running the Demonstrations
+
+Execute the Phase 2 quantum primitives demonstration:
+
+```bash
+# Windows
+.venv\Scripts\python experiments/phase2_quantum_primitives.py
+
+# Linux / macOS
+python experiments/phase2_quantum_primitives.py
+```
+
 ## Running Tests
 
-Run the test suite using the virtual environment:
+Run the full automated test suite using the virtual environment:
 
 ```bash
 # Windows
@@ -68,5 +82,6 @@ source .venv/bin/activate && pytest -v
 
 ## Research Direction
 
-The project will experimentally investigate the relationship between eavesdropping, quantum noise, and Quantum Bit Error Rate (QBER) in the BB84 protocol.
+The project experimentally investigates the relationship between eavesdropping, quantum noise, and Quantum Bit Error Rate (QBER) in the BB84 protocol.
+
 
