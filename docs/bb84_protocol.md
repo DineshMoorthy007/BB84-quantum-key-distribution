@@ -331,6 +331,79 @@ Our simulator does not hardcode $25\%$; the error rate emerges purely from simul
 
 ---
 
+## 2.7 Phase 8 — Quantum Noise
+
+The quantum noise package (`noise/`) models physical environmental perturbations acting directly on single-qubit quantum states within `QuantumChannel`.
+
+### 1. Why Real Quantum Channels are Noisy
+In optical fiber or free-space telecommunications, physical quantum carriers inevitably interact with their ambient environment:
+- **Thermal Fluctuations & Mechanical Vibrations**: Induce random optical birefringence, rotating qubit polarization.
+- **Material Dispersion & Attenuation**: Causes photon loss and phase jitter.
+- **Detector Dark Counts & Inefficiencies**: Introduce spurious measurement clicks.
+Consequently, real-world QKD transmissions always exhibit an intrinsic baseline error rate (typically $1\%$ to $4\%$).
+
+### 2. Difference Between Classical Error Injection and Quantum Noise
+A fundamental conceptual distinction in this simulator:
+```text
+Classical Validation Error (Phase 6):
+[Alice Sifted Key]  ----------------------------> [Bob Sifted Key]
+                                                      ↓
+                                           [Flip Classical Integer Bit]
+
+Quantum Channel Noise (Phase 8):
+|ψ⟩ (Alice State) -> [Quantum Channel] -> [Quantum Noise Operator] -> |ψ'⟩ -> [Bob Detector] -> Measured Bit
+```
+- **Classical Error Injection (`src/error_injection.py`)**: A diagnostic testing utility operating on post-measurement integer bit arrays (`0` and `1`). It tests the statistical arithmetic of the QBER module.
+- **Quantum Noise (`noise/`)**: Physical quantum channels that operate on single-qubit density matrices and `QuantumCircuit` state representations prior to projective measurement.
+
+### 3. Bit-Flip Noise (Pauli-$X$)
+A bit-flip error models an environmental interaction that inverts computational basis states:
+$$X = \begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix}, \quad X|0\rangle = |1\rangle, \quad X|1\rangle = |0\rangle$$
+With probability $p$, the channel applies a Pauli-$X$ gate; with probability $1-p$, the state passes unchanged.
+- **Basis Asymmetry**: $X$ inverts $|0\rangle \leftrightarrow |1\rangle$ in the $Z$-basis. However, in the $X$-basis, $|+\rangle$ and $|-\rangle$ are eigenvectors of $X$: $X|+\rangle = |+\rangle$ and $X|-\rangle = -|-\rangle$ (global phase). Thus, bit-flip noise induces zero bit errors on $X$-basis transmissions, yielding an overall BB84 QBER of $\approx p/2$.
+
+### 4. Phase-Flip Noise (Pauli-$Z$)
+A phase-flip error introduces a relative phase shift of $\pi$ between computational basis components:
+$$Z = \begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix}, \quad Z|0\rangle = |0\rangle, \quad Z|1\rangle = -|1\rangle$$
+With probability $p$, the channel applies a Pauli-$Z$ gate; with probability $1-p$, the state passes unchanged.
+
+### 5. Why Phase Errors are Basis-Dependent
+Phase flips illustrate the principle of quantum complementarity:
+- **In the $Z$-Basis**: $Z|0\rangle = |0\rangle$, while $Z|1\rangle = -|1\rangle = e^{i\pi}|1\rangle$. Because global phase factors do not alter projective measurement probabilities ($|\langle 1 | (-|1\rangle)|^2 = 1$), measurements in the $Z$-basis are **completely immune** to phase-flip noise! Observed QBER in the $Z$-basis is strictly $0\%$.
+- **In the $X$-Basis**: $Z|+\rangle = |-\rangle$ and $Z|-\rangle = |+\rangle$. Phase noise inverts the $X$-basis eigenstates, converting bit $0 \leftrightarrow 1$. Observed QBER in the $X$-basis equals the noise probability $p$.
+- **BB84 Sifted Key**: With $50\%$ of sifted bits measured in $Z$ and $50\%$ in $X$, the average observed QBER is $p/2$.
+
+### 6. Depolarizing Noise (Qiskit Standard Parameterization)
+Depolarizing noise models isotropic state degradation towards the maximally mixed state $I/2$.
+Adhering to Qiskit Aer's standard `depolarizing_error(lambda, 1)`:
+$$\mathcal{E}(\rho) = (1 - \lambda)\rho + \lambda \frac{I}{2} = \left(1 - \frac{3\lambda}{4}\right)\rho + \frac{\lambda}{4}\Big(X\rho X + Y\rho Y + Z\rho Z\Big)$$
+Operational probabilities:
+- Identity ($I$): $P(I) = 1 - \frac{3\lambda}{4}$
+- Pauli-$X$: $P(X) = \frac{\lambda}{4}$
+- Pauli-$Y$: $P(Y) = \frac{\lambda}{4}$
+- Pauli-$Z$: $P(Z) = \frac{\lambda}{4}$
+In both $Z$ and $X$ bases, exactly two of the three Pauli errors induce bit flips ($X$ and $Y$ in $Z$-basis; $Z$ and $Y$ in $X$-basis). Hence, the expected QBER is $\frac{\lambda}{4} + \frac{\lambda}{4} = \frac{\lambda}{2} = 50\% \times \lambda$. Complete depolarization ($\lambda = 1.0$) yields $50\%$ QBER (pure random guessing).
+
+### 7. Why Noise Causes Nonzero QBER
+In an ideal channel, state fidelity is $1.0$, producing zero bit errors on matched bases. When quantum noise operators (Pauli $X, Y, Z$) perturb the transmitted states, Bob's measurement basis no longer aligns with the disturbed state's eigenbasis, introducing bit errors into the sifted key.
+
+### 8. Eve-Induced Errors vs. Noise-Induced Errors
+- **Eve's Disturbance**: Stem from quantum measurement projection when Eve guesses the wrong basis ($P = 1/2$). Eve's errors are coupled to classical information extraction.
+- **Environmental Noise**: Arises from unitary perturbations or random thermal entanglements without any classical information leakage to a third party.
+
+### 9. Why QBER Alone Cannot Distinguish Eve from Channel Noise
+Alice and Bob observe only one physical classical observable during sifting: the rate of bit mismatches (QBER).
+A measured QBER of $6\%$ could result from:
+- A partial eavesdropping attack ($p_{\text{eve}} \approx 24\%$, since $0.24 \times 25\% = 6\%$).
+- An unintercepted channel with $12\%$ depolarizing noise ($\lambda / 2 = 6\%$).
+- A combination of minor eavesdropping and minor channel noise.
+Because Alice and Bob cannot physically discern the origin of errors from QBER alone, information-theoretic security proofs mandate the **worst-case assumption**: all observed QBER is attributed to Eve. If $\text{QBER} > 11\%$ (Shor-Preskill threshold), the protocol aborts immediately.
+
+### 10. Importance of Statistical Repetition
+Quantum state preparation, noise application, and measurement are stochastic processes governed by binomial statistics. A single finite trial will fluctuate around the mathematical expectation by $\sigma \approx \sqrt{p(1-p)/N_{\text{sifted}}}$. Multiple independent Monte Carlo repetitions are necessary to characterize mean behavior and experimental variance.
+
+---
+
 ## 3. Protocol Execution Steps
 
 1. **State Preparation (Alice)**:

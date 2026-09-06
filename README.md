@@ -44,6 +44,7 @@ The project aims to demonstrate how quantum mechanics can be used for secure key
 - Phase 5 — Basis reconciliation and key sifting ✓
 - Phase 6 — QBER analysis ✓
 - Phase 7 — Eve intercept-resend attack ✓
+- Phase 8 — Quantum noise and noisy channel ✓
 
 ## Project Status
 
@@ -53,8 +54,9 @@ The project aims to demonstrate how quantum mechanics can be used for secure key
 - [x] **Phase 4** — Bob (Receiver) component & quantum channel transmission completed (independent random basis selection, projective measurement, Alice-to-Bob signal transmission, and integration tests).
 - [x] **Phase 5** — Classical basis reconciliation & key sifting completed (public basis comparison, matched-basis key filtering, sifting ratio analysis, and unit tests).
 - [x] **Phase 6** — Quantum Bit Error Rate (QBER) analysis & security baseline completed (sifted key comparison, diagnostic classical error injection, convergence statistics, and validation plots).
-- [x] **Phase 7** — Eve (Eavesdropper) intercept-resend attack completed. The simulator now models an intercept-resend eavesdropping attack at the quantum-state level and experimentally evaluates its effect on QBER. (Note: QBER evaluation alone does not constitute a complete mathematical security proof).
-- [ ] **Phase 8** — Quantum Channel Noise Models (upcoming).
+- [x] **Phase 7** — Eve (Eavesdropper) intercept-resend attack completed. The simulator models an intercept-resend eavesdropping attack at the quantum-state level and experimentally evaluates its effect on QBER.
+- [x] **Phase 8** — Quantum noise and noisy channel completed. Implemented quantum state-level noise models (Bit-Flip, Phase-Flip, and Depolarizing channels adhering to Qiskit Aer's specification) with integrated channel composition supporting independent Eve + Noise experimentation.
+- [ ] **Phase 9** — Classical Post-Processing: Error Correction & Privacy Amplification (upcoming).
 
 ## Project Structure
 
@@ -102,6 +104,21 @@ Execute the phase-specific educational demonstration scripts:
 
 # Phase 7 — Experiment 3: Statistical Convergence of Intercept-Resend QBER
 .venv\Scripts\python experiments/phase7_convergence.py
+
+# Phase 8 — Experiment 1: Quantum Noise Model Comparison
+.venv\Scripts\python experiments/phase8_noise_comparison.py
+
+# Phase 8 — Experiment 2: Quantum Noise Parameter Sweep
+.venv\Scripts\python experiments/phase8_noise_sweep.py
+
+# Phase 8 — Experiment 3: Basis-Dependent Phase Noise Investigation
+.venv\Scripts\python experiments/phase8_phase_noise_basis.py
+
+# Phase 8 — Experiment 4: Eavesdropping vs. Environmental Quantum Noise
+.venv\Scripts\python experiments/phase8_eve_vs_noise.py
+
+# Phase 8 — Experiment 5: Statistical Variability of Quantum Noise
+.venv\Scripts\python experiments/phase8_statistics.py
 ```
 
 
