@@ -163,6 +163,48 @@ Quantum Bit Error Rate (QBER) measures transmission fidelity and eavesdropping d
 
 ---
 
+## 2.4 Phase 5 — Basis Reconciliation and Key Sifting
+
+The key sifting module (`src/key_sifting.py`) implements classical basis reconciliation, establishing shared raw keys between Alice and Bob.
+
+### 1. Why Alice and Bob Compare Bases
+Alice and Bob independently select random bases ($Z$ or $X$) for each photon. Quantum measurement in the conjugate basis yields purely random outcomes ($50\%$ probability of matching Alice's bit). To distill a correlated key, they publicly announce their basis sequences $B_A$ and $B_B$ over an authenticated classical channel and determine which positions were measured in the same basis ($b_{A, i} = b_{B, i}$).
+
+### 2. Why Bit Values Are Never Announced
+Revealing classical bit values over the public channel would destroy cryptographic secrecy. An eavesdropper monitoring the channel would instantly learn the key. Alice and Bob announce **only** the basis names (`"Z"` or `"X"`), never their bits or measured outcomes ($0$ or $1$).
+
+### 3. Why Mismatched Bases Are Discarded
+When Alice and Bob select different bases (e.g., Alice encodes in $Z$ and Bob measures in $X$), the measurement is a projective projection onto an equal superposition. The outcome carries zero mutual information regarding Alice's prepared bit. Discarding these positions is mandatory to remove unaligned, uninformative data.
+
+> [!IMPORTANT]
+> **Basis Mismatch vs. Bit Error**:
+> A basis mismatch is **not** a bit error. A mismatch is an expected physical byproduct of independent, random basis selection. True bit errors occur only at indices where bases **matched** but the measured bit disagrees with the prepared bit.
+
+### 4. Survival Rate (The 50% Sifting Ratio)
+Because Alice and Bob select between two bases uniformly and independently:
+$$P(b_{A, i} = b_{B, i}) = P(Z, Z) + P(X, X) = \left(\frac{1}{2} \times \frac{1}{2}\right) + \left(\frac{1}{2} \times \frac{1}{2}\right) = \frac{1}{2} = 50\%$$
+Over a sufficiently large transmission (e.g., $N \ge 1000$ signals), the observed sifting ratio:
+$$\text{Sifting Ratio} = \frac{|\text{Matching Indices}|}{N} \approx 0.50$$
+approximately half the transmitted signals survive basis sifting.
+
+### 5. Definition of the Sifted Key
+The **sifted key** is the sub-sequence of bits retained by Alice ($K_A^{\text{sifted}}$) and Bob ($K_B^{\text{sifted}}$) at the matching basis positions $\{i \mid b_{A, i} = b_{B, i}\}$:
+$$K_A^{\text{sifted}} = \{a_i \mid b_{A, i} = b_{B, i}\}, \quad K_B^{\text{sifted}} = \{r_i \mid b_{A, i} = b_{B, i}\}$$
+In an ideal, noiseless channel without eavesdropping, $K_A^{\text{sifted}} = K_B^{\text{sifted}}$ with $100\%$ fidelity.
+
+### 6. Why Sifted Keys Are Not Yet Final Secure Keys
+The sifted key is an intermediate stage, not the final secret key:
+- **Imperfections & Noise**: Real physical channels introduce thermal noise, detector dark counts, and fiber birefringence, causing bit errors even on matched bases.
+- **Potential Eavesdropping**: An eavesdropper intercepting signals introduces errors into the sifted key.
+- **Information Leakage**: Post-processing error correction leaks parity bits to the public channel.
+Therefore, the sifted key must undergo error rate testing (QBER), information reconciliation, and privacy amplification before becoming a secure cryptographic key.
+
+### 7. Why QBER is Evaluated After Sifting
+Evaluating error rates on unsifted signals would conflate basis mismatch randomness ($50\%$ disagreement on half the signals) with actual channel noise and eavesdropping disturbance. True Quantum Bit Error Rate (QBER) is strictly defined over the **sifted key**:
+$$\text{QBER} = \frac{1}{|K^{\text{sifted}}|} \sum_{j} (K_{A, j}^{\text{sifted}} \oplus K_{B, j}^{\text{sifted}})$$
+Evaluating QBER on sifted keys will be implemented in Phase 6.
+
+---
 
 
 

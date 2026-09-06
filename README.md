@@ -41,7 +41,8 @@ The project aims to demonstrate how quantum mechanics can be used for secure key
 - [x] **Phase 2** — Fundamental quantum primitives completed (state preparation for |0>, |1>, |+>, |->, projective Z and X basis measurements, statevector analysis, and comprehensive unit tests).
 - [x] **Phase 3** — Alice (Sender) component completed (random bit & basis generation, state encoding into `BB84Signal`, private classical state encapsulation, and unit tests).
 - [x] **Phase 4** — Bob (Receiver) component & quantum channel transmission completed (independent random basis selection, projective measurement, Alice-to-Bob signal transmission, and integration tests).
-- [ ] **Phase 5** — Classical basis reconciliation & key sifting (upcoming).
+- [x] **Phase 5** — Classical basis reconciliation & key sifting completed (public basis comparison, matched-basis key filtering, sifting ratio analysis, and unit tests).
+- [ ] **Phase 6** — Quantum Bit Error Rate (QBER) estimation & threshold analysis (upcoming).
 
 ## Project Structure
 
@@ -53,7 +54,7 @@ bb84-quantum-key-distribution/
 ├── noise/           # Quantum channel noise models (depolarizing, bit/phase-flip)
 ├── results/         # Output artifacts (simulation logs, datasets, plots)
 ├── simulator/       # Qiskit Aer backend and circuit execution managers
-├── src/             # Core protocol logic (Alice, Bob, QuantumChannel, primitives, config)
+├── src/             # Core protocol logic (Alice, Bob, QuantumChannel, key sifting, primitives, config)
 ├── tests/           # Automated pytest test suites
 └── visualization/   # Decoupled plotting routines (Matplotlib)
 ```
@@ -71,7 +72,11 @@ Execute the phase-specific educational demonstration scripts:
 
 # Phase 4 — Alice -> QuantumChannel -> Bob Transmission Demonstration
 .venv\Scripts\python experiments/phase4_alice_bob.py --signals 16 --alice-seed 42 --bob-seed 99
+
+# Phase 5 — Basis Reconciliation & Key Sifting Demonstration
+.venv\Scripts\python experiments/phase5_key_sifting.py --signals 1000 --seed-alice 42 --seed-bob 99
 ```
+
 
 
 
