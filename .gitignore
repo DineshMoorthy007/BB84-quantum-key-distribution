@@ -7,5 +7,5 @@ __pycache__/
 .env
 *.log
 
-results/*
+# results/*
 !results/.gitkeep
