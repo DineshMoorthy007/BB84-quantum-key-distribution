@@ -59,36 +59,52 @@ The simulation pipeline spans three distinct operational phases:
 
 ```mermaid
 flowchart TD
-    subgraph Stage1["1. Quantum Carrier Transmission (Phases 2-4, 7, 8)"]
-        A["Alice: Encode Random Bits into BB84 States (|0>, |1>, |+>, |->)"] --> C["Quantum Channel"]
-        C -->|"Flying Qubits"| E{"Eve Active?"}
-        E -->|"Yes (p_eve)"| EA["Eve: Intercept, Measure & Resend Replacement"]
-        E -->|"No"| N{"Channel Noise?"}
-        EA --> N
-        N -->|"Yes (p_noise)"| NM["Physical Decoherence (Bit/Phase/Depol)"]
-        N -->|"No"| B["Bob: Projective Measurement in Random Basis (Z / X)"]
-        NM --> B
+    subgraph STAGE1["Stage 1: Quantum Carrier Transmission (Phases 2–4, 7, 8)"]
+        direction TB
+        ALICE["Alice: State Preparation<br/>Encodes random bits into |0⟩, |1⟩, |+⟩, |–⟩"]
+        CHAN["Quantum Transmission Channel<br/>Flying single photons subject to Eve & Decoherence"]
+        BOB["Bob: Projective Detection<br/>Measures in independently chosen basis (Z or X)"]
+
+        ALICE -->|"Flying Qubits"| CHAN
+        CHAN -->|"Received Qubits"| BOB
     end
 
-    subgraph Stage2["2. Classical Key Sifting (Phases 5-6)"]
-        B --> S["Basis Reconciliation: Public Comparison (B_A == B_B)"]
-        S --> SK["Sifted Raw Key (~50% Sifting Retention)"]
+    subgraph STAGE2["Stage 2: Key Sifting & Basis Reconciliation (Phases 5–6)"]
+        direction TB
+        COMP["Public Basis Comparison<br/>Alice & Bob announce bases (Z vs X) over classical channel"]
+        SIFT["Sifted Key Extraction<br/>Retain matching-basis bits (~50% sifting ratio), discard mismatches"]
+
+        COMP --> SIFT
     end
 
-    subgraph Stage3["3. Classical Post-Processing Pipeline (Phase 9)"]
-        SK --> EE["Error Estimation: Disclose & Discard k Test Bits"]
-        EE --> QC{"Estimated QBER <= 11.0%?"}
-        QC -->|"No (Eve Detected / High Noise)"| ABORT["ABORT: Security Compromised (0 Secret Bits)"]
-        QC -->|"Yes (Channel Secure)"| IR["Information Reconciliation: Parity Check & Binary Search"]
-        IR -->|"Track Parity Bit Leakage"| PA["Privacy Amplification: GF(2) Toeplitz Universal Hashing"]
-        PA --> FK["Distilled Secret Key (Alice == Bob, 100% Identity)"]
+    subgraph STAGE3["Stage 3: Classical Post-Processing Pipeline (Phase 9)"]
+        direction TB
+        EST["1. Error Parameter Estimation<br/>Disclose and discard k test bits to measure QBER"]
+        CHK{"2. Security Check<br/>QBER ≤ 11.0%?"}
+        ABORT["ABORT PROTOCOL<br/>Eavesdropper detected! Zero secret key distilled"]
+        REC["3. Information Reconciliation<br/>Interactive block parity checks correct bit errors"]
+        AMP["4. Privacy Amplification<br/>GF(2) Toeplitz universal hashing compresses key"]
+        SEC["SHARED FINAL SECRET KEY<br/>Alice & Bob hold identical distilled secret key"]
+
+        EST --> CHK
+        CHK -->|"QBER > 11% (Compromised)"| ABORT
+        CHK -->|"QBER ≤ 11% (Secure)"| REC
+        REC -->|"Track parity leakage"| AMP
+        AMP --> SEC
     end
 
-    style Stage1 fill:#f0f4ff,stroke:#2b5797,stroke-width:2px
-    style Stage2 fill:#f5f0ff,stroke:#6929c4,stroke-width:2px
-    style Stage3 fill:#f0fff4,stroke:#107c41,stroke-width:2px
-    style ABORT fill:#ffebe8,stroke:#d13438,stroke-width:2px
-    style FK fill:#e6ffed,stroke:#107c41,stroke-width:2px
+    BOB -->|"Raw Measurement Records"| COMP
+    SIFT -->|"Sifted Bits"| EST
+
+    classDef actionNode fill:#1e293b,stroke:#64748b,stroke-width:1.5px,color:#f8fafc;
+    classDef decisionNode fill:#1e293b,stroke:#f59e0b,stroke-width:2px,color:#f8fafc;
+    classDef abortNode fill:#7f1d1d,stroke:#ef4444,stroke-width:2px,color:#ffffff;
+    classDef successNode fill:#14532d,stroke:#22c55e,stroke-width:2px,color:#ffffff;
+
+    class ALICE,CHAN,BOB,COMP,SIFT,EST,REC,AMP actionNode;
+    class CHK decisionNode;
+    class ABORT abortNode;
+    class SEC successNode;
 ```
 
 ---
@@ -101,42 +117,39 @@ The protocol coordinates quantum transmission across a fragile quantum channel f
 sequenceDiagram
     autonumber
     actor Alice
-    participant QC as Quantum Channel
+    participant QC as Quantum Channel (Insecure)
     actor Eve as Eve (Eavesdropper)
     actor Bob
+    participant CC as Classical Channel (Public / Authenticated)
 
-    rect rgb(240, 245, 255)
-    Note over Alice,Bob: STAGE 1: Quantum Transmission
-    Alice->>QC: Transmit single photons |ψ⟩ in Z or X basis
-    opt Eavesdropping (p_eve > 0)
-        QC->>Eve: Intercept flying qubit
-        Eve->>Eve: Measure in random basis (Z or X)
-        Eve->>QC: Resend collapsed replacement state
+    Note over Alice,CC: STAGE 1: QUANTUM CARRIER TRANSMISSION
+    Alice->>QC: 1. Transmit single photons |ψ⟩ in Z or X basis
+    opt Eavesdropping Active (p_eve > 0)
+        QC->>Eve: 2. Intercept flying qubit
+        Eve->>Eve: 3. Measure in random basis & prepare replacement
+        Eve->>QC: 4. Resend disturbed replacement state
     end
-    QC->>Bob: Deliver qubit (subject to physical channel noise)
-    Bob->>Bob: Measure in independently chosen basis (Z or X)
-    end
+    QC->>Bob: 5. Deliver qubit (subject to physical channel noise)
+    Bob->>Bob: 6. Measure in independently chosen basis (Z or X)
 
-    rect rgb(245, 240, 255)
-    Note over Alice,Bob: STAGE 2: Public Basis Reconciliation (Key Sifting)
-    Alice<<->>Bob: Publicly exchange basis choices (Z vs X)
-    Note over Alice,Bob: Keep bits where bases match (~50%), discard remainder
-    end
+    Note over Alice,CC: STAGE 2: PUBLIC BASIS RECONCILIATION
+    Alice->>CC: 7. Publicly announce basis choices (Z vs X)
+    Bob->>CC: 8. Publicly announce basis choices (Z vs X)
+    Note over Alice,Bob: Retain matching-basis events (~50%), discard mismatches
 
-    rect rgb(240, 255, 244)
-    Note over Alice,Bob: STAGE 3: Parameter Estimation & Key Distillation
-    Alice<<->>Bob: Disclose random sample of k test bits & discard them
-    Alice->>Alice: Compute sample QBER = e / k
-    Bob->>Bob: Compute sample QBER = e / k
-    alt QBER > 11.0% (Shor-Preskill Security Threshold Exceeded)
-        Note over Alice,Bob: ABORT PROTOCOL: Eavesdropping or extreme noise detected
-    else QBER <= 11.0% (Channel Authenticated as Secure)
-        Alice<<->>Bob: Interactive block-parity exchange & binary search correction
-        Note over Alice,Bob: Bob corrects all bit discrepancies; track parity leakage
-        Alice->>Alice: Hash reconciled key using shared Toeplitz matrix in GF(2)
-        Bob->>Bob: Hash reconciled key using shared Toeplitz matrix in GF(2)
+    Note over Alice,CC: STAGE 3: PARAMETER ESTIMATION & KEY DISTILLATION
+    Alice->>CC: 9. Disclose & discard sample of k test bits
+    Alice->>Alice: Compute sample QBER = errors / k
+    Bob->>Bob: Compute sample QBER = errors / k
+    alt QBER > 11.0% (Shor-Preskill Threshold Exceeded)
+        Note over Alice,Bob: SECURITY ABORT: Eavesdropper detected! 0 secret bits distilled.
+    else QBER <= 11.0% (Channel Authenticated Secure)
+        Alice->>CC: 10. Interactive block-parity exchange
+        Bob->>CC: 10. Interactive block-parity exchange
+        Note over Alice,Bob: Bob corrects bit flips; track total parity leakage
+        Alice->>Alice: 11. Universal Toeplitz hashing in GF(2)
+        Bob->>Bob: 11. Universal Toeplitz hashing in GF(2)
         Note over Alice,Bob: Identical Final Secret Key Distilled!
-    end
     end
 ```
 
@@ -148,24 +161,27 @@ The `QuantumChannel` acts directly on Qiskit `QuantumCircuit` objects prior to r
 
 ```mermaid
 flowchart LR
-    A["Alice's Encoded State |ψ⟩"] --> QC["QuantumChannel Abstraction"]
-    subgraph Medium["Physical Channel Pipeline"]
-        QC -->|"Pass 1: Tapping Layer"| EVE{"Eve Present?"}
-        EVE -->|"Yes"| EACT["Eve Intercept-Resend: Measurement & State Re-preparation"]
-        EVE -->|"No"| NOISE{"Noise Configured?"}
-        EACT --> NOISE
-        NOISE -->|"Yes"| NMOD["Physical Noise Layer"]
-        subgraph Supported_Noise["Decoherence Models"]
-            NMOD -.-> BF["Bit-Flip: Pauli-X Channel (p)"]
-            NMOD -.-> PF["Phase-Flip: Pauli-Z Channel (p)"]
-            NMOD -.-> DP["Depolarizing: Aer Isotropic Channel (lambda)"]
-        end
-        NOISE -->|"No"| ID["Identity: Ideal Channel"]
+    subgraph Channel["Physical Transmission Pipeline"]
+        direction LR
+        A["Alice: State Preparation<br/>|ψ⟩ ∈ {|0⟩, |1⟩, |+⟩, |–⟩}"] --> EVE["Layer 1: Eve Tapping<br/>(Intercept-Resend Attack)"]
+        EVE --> NOISE["Layer 2: Physical Noise<br/>(Quantum Decoherence)"]
+        NOISE --> B["Bob: Projective Detection<br/>(Z or X Basis)"]
     end
-    NMOD --> B["Bob's Detector"]
-    ID --> B
 
-    style Medium fill:#fafafa,stroke:#666,stroke-dasharray: 5 5
+    subgraph Models["Supported Noise Models"]
+        direction TB
+        BF["Bit-Flip: Pauli-X Channel<br/>Z-basis error |0⟩↔|1⟩, X-basis invariant"]
+        PF["Phase-Flip: Pauli-Z Channel<br/>X-basis error |+⟩↔|–⟩, Z-basis invariant"]
+        DP["Depolarizing: Qiskit Aer<br/>Isotropic degradation with parameter λ"]
+    end
+
+    NOISE -.->|"Applies"| Models
+
+    classDef channelBox fill:#1e293b,stroke:#3b82f6,stroke-width:1.5px,color:#f8fafc;
+    classDef noiseBox fill:#1e293b,stroke:#8b5cf6,stroke-width:1.5px,color:#f8fafc;
+
+    class A,EVE,NOISE,B channelBox;
+    class BF,PF,DP noiseBox;
 ```
 
 ---
