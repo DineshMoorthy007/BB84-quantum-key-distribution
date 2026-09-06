@@ -35,6 +35,15 @@ The project aims to demonstrate how quantum mechanics can be used for secure key
 * Pytest
 * Git/GitHub
 
+## Current Implementation Status
+
+- Phase 1 — Project architecture ✓
+- Phase 2 — Quantum primitives ✓
+- Phase 3 — Alice ✓
+- Phase 4 — Bob and quantum channel ✓
+- Phase 5 — Basis reconciliation and key sifting ✓
+- Phase 6 — QBER analysis ✓
+
 ## Project Status
 
 - [x] **Phase 1** — Environment, project architecture, and configuration setup completed.
@@ -42,7 +51,8 @@ The project aims to demonstrate how quantum mechanics can be used for secure key
 - [x] **Phase 3** — Alice (Sender) component completed (random bit & basis generation, state encoding into `BB84Signal`, private classical state encapsulation, and unit tests).
 - [x] **Phase 4** — Bob (Receiver) component & quantum channel transmission completed (independent random basis selection, projective measurement, Alice-to-Bob signal transmission, and integration tests).
 - [x] **Phase 5** — Classical basis reconciliation & key sifting completed (public basis comparison, matched-basis key filtering, sifting ratio analysis, and unit tests).
-- [ ] **Phase 6** — Quantum Bit Error Rate (QBER) estimation & threshold analysis (upcoming).
+- [x] **Phase 6** — Quantum Bit Error Rate (QBER) analysis & security baseline completed (sifted key comparison, diagnostic classical error injection, convergence statistics, and validation plots).
+- [ ] **Phase 7** — Eve (Eavesdropper) & intercept-resend attack simulation (upcoming).
 
 ## Project Structure
 
@@ -54,7 +64,7 @@ bb84-quantum-key-distribution/
 ├── noise/           # Quantum channel noise models (depolarizing, bit/phase-flip)
 ├── results/         # Output artifacts (simulation logs, datasets, plots)
 ├── simulator/       # Qiskit Aer backend and circuit execution managers
-├── src/             # Core protocol logic (Alice, Bob, QuantumChannel, key sifting, primitives, config)
+├── src/             # Core protocol logic (Alice, Bob, Channel, Sifting, QBER, Error Injection)
 ├── tests/           # Automated pytest test suites
 └── visualization/   # Decoupled plotting routines (Matplotlib)
 ```
@@ -75,7 +85,14 @@ Execute the phase-specific educational demonstration scripts:
 
 # Phase 5 — Basis Reconciliation & Key Sifting Demonstration
 .venv\Scripts\python experiments/phase5_key_sifting.py --signals 1000 --seed-alice 42 --seed-bob 99
+
+# Phase 6 — QBER Baseline Analysis & Controlled Classical Error Experiment
+.venv\Scripts\python experiments/phase6_qber_analysis.py --signals 1000 --seed 42
+
+# Phase 6 — QBER Statistical Convergence Study
+.venv\Scripts\python experiments/phase6_statistics.py --error-rate 0.10 --seed 42
 ```
+
 
 
 

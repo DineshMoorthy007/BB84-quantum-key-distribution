@@ -7,7 +7,9 @@ and protocol execution.
 from .alice import Alice, BB84Signal
 from .bob import Bob, BobMeasurement
 from .config import BB84Config, NoiseModelType
+from .error_injection import inject_classical_bit_errors
 from .key_sifting import SiftingResult, reconcile_bases, sift_from_alice_and_bob, sift_keys
+from .qber import QBERResult, QBERSecurityReport, analyze_qber_security, calculate_qber
 from .quantum_channel import QuantumChannel
 from .quantum_primitives import (
     COMPUTATIONAL_BASIS,
@@ -39,6 +41,11 @@ __all__ = [
     "reconcile_bases",
     "sift_keys",
     "sift_from_alice_and_bob",
+    "QBERResult",
+    "QBERSecurityReport",
+    "calculate_qber",
+    "analyze_qber_security",
+    "inject_classical_bit_errors",
     "BB84Config",
     "NoiseModelType",
     "COMPUTATIONAL_BASIS",
@@ -59,6 +66,7 @@ __all__ = [
     "validate_bit",
     "validate_basis",
 ]
+
 
 
 

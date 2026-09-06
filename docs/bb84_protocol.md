@@ -202,11 +202,62 @@ Therefore, the sifted key must undergo error rate testing (QBER), information re
 ### 7. Why QBER is Evaluated After Sifting
 Evaluating error rates on unsifted signals would conflate basis mismatch randomness ($50\%$ disagreement on half the signals) with actual channel noise and eavesdropping disturbance. True Quantum Bit Error Rate (QBER) is strictly defined over the **sifted key**:
 $$\text{QBER} = \frac{1}{|K^{\text{sifted}}|} \sum_{j} (K_{A, j}^{\text{sifted}} \oplus K_{B, j}^{\text{sifted}})$$
-Evaluating QBER on sifted keys will be implemented in Phase 6.
 
 ---
 
+## 2.5 Phase 6 — QBER Analysis
 
+The QBER module (`src/qber.py`) provides quantitative error estimation across sifted keys, establishing the experimental baseline for the BB84 simulator.
+
+### 1. Definition and Meaning of QBER
+The **Quantum Bit Error Rate (QBER)** is the fundamental metric of channel disturbance and transmission fidelity in quantum key distribution. It represents the ratio of discrepant bit positions to the total number of compared sifted bits:
+$$\text{QBER} = \frac{\sum_{i=0}^{n-1} |a_i^{\text{sifted}} - b_i^{\text{sifted}}|}{n}$$
+where $n = |K^{\text{sifted}}|$.
+
+### 2. Why QBER Operates Exclusively on Sifted Keys
+QBER must only be computed after classical basis reconciliation has discarded all mismatched-basis signals. Calculating error rates on raw signals prior to sifting would yield an artificial $\approx 25\%$ error floor caused by quantum measurement randomness in conjugate bases.
+
+### 3. Sifted Key Comparison Methodology
+Alice and Bob's sifted keys are compared position-by-position. For every matched position $i \in \{0, \dots, n-1\}$:
+- Agreement: $a_i^{\text{sifted}} = b_i^{\text{sifted}} \implies \text{matching\_bits} \mathrel{+}= 1$
+- Discrepancy: $a_i^{\text{sifted}} \neq b_i^{\text{sifted}} \implies \text{error\_count} \mathrel{+}= 1$, index recorded in `error_indices`
+
+### 4. Conceptual Distinction: Basis Mismatch vs. Bit Error
+In quantum cryptography, basis mismatch and bit error are fundamentally distinct phenomena:
+- **Basis Mismatch** ($b_{A, i} \neq b_{B, i}$): Occurs because Alice and Bob choose measurement bases independently. It is an expected consequence of quantum mechanics and is discarded during sifting. It is **not** an error.
+- **Bit Error** ($b_{A, i} = b_{B, i}$, but $a_i \neq r_i$): A discrepancy occurring at an aligned basis position. True bit errors arise from channel noise, detector dark counts, or eavesdropping disturbances.
+
+### 5. Why the Ideal Channel Produces Zero QBER
+In an ideal, noiseless quantum channel without eavesdropping:
+- Every photon is prepared in an exact eigenstate of its basis ($|0\rangle, |1\rangle, |+\rangle, |-\rangle$).
+- The state propagates unperturbed through `QuantumChannel`.
+- Bob measures along the exact same basis, projecting onto the prepared eigenstate with probability $1.0$.
+Consequently, in an unperturbed simulation, $\text{QBER} = 0.00\%$, establishing the required experimental baseline.
+
+### 6. Why Physical QKD Systems Exhibit Nonzero QBER
+In practical implementations, real hardware inherently suffers from:
+- Single-photon detector dark counts and timing jitter.
+- Optical fiber attenuation, polarization drift, and phase decoherence.
+- Imperfect state preparation (multi-photon emissions from attenuated lasers).
+Standard commercial QKD systems typically exhibit an optical baseline QBER between $1\%$ and $4\%$.
+
+### 7. Why QBER Alone is Not a Complete Security Proof
+While QBER is the primary trigger for eavesdropping detection:
+- An observed $\text{QBER} < 11\%$ indicates that error correction and privacy amplification can asymptotically extract a secret key under the Shor-Preskill / CSS proof framework.
+- However, QBER alone does not account for finite-key statistical fluctuations, side-channel vulnerabilities, multi-photon pulse splitting attacks (PNS), or Trojan-horse attacks. Numerical simulations model physical observables but do not constitute a formal mathematical security proof.
+
+### 8. The Importance of Statistical Sample Size
+The observed QBER on a finite sample is a random variable following a binomial distribution. By the Law of Large Numbers, the sample variance scales as $\sigma \propto 1/\sqrt{N_{\text{sifted}}}$. For small sample sizes (e.g., $N=100$), random statistical fluctuations can exceed $2\%$, risking false alarms or undetected eavesdropping. Reliable threshold evaluation requires large sample sizes ($N \ge 1,000$ to $10,000$ bits) or rigorous finite-key confidence bounds.
+
+---
+
+### Classical Error Injection for Validation
+
+Implemented in `src/error_injection.py`:
+- **Diagnostic Purpose**: A classical utility designed exclusively to validate the QBER calculation and statistical estimation routines by injecting controlled independent bit flips into a copy of Bob's sifted key at rate $p \in [0.0, 1.0]$.
+- **Architectural Boundary**: This is **NOT** a quantum noise model. It operates purely on classical integer arrays and does not alter quantum circuits or state vectors. Physical quantum noise channels are implemented separately in later phases.
+
+---
 
 ## 3. Protocol Execution Steps
 
