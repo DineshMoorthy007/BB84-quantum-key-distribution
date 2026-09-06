@@ -1,144 +1,429 @@
 # BB84 Quantum Key Distribution Simulator
 
-A research-oriented software platform for simulating and experimentally analyzing the BB84 Quantum Key Distribution (QKD) protocol.
+<p align="center">
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.10%2B-3776AB.svg?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+"></a>
+  <a href="https://qiskit.org/"><img src="https://img.shields.io/badge/Qiskit-2.5.2-6929C4.svg?style=flat-square&logo=qiskit&logoColor=white" alt="Qiskit 2.5.2"></a>
+  <a href="https://github.com/Qiskit/qiskit-aer"><img src="https://img.shields.io/badge/Qiskit_Aer-0.17.2-1192E8.svg?style=flat-square" alt="Qiskit Aer 0.17.2"></a>
+  <a href="tests/"><img src="https://img.shields.io/badge/Tests-166%20Passing-brightgreen.svg?style=flat-square&logo=pytest&logoColor=white" alt="166 Tests Passing"></a>
+  <a href="docs/bb84_protocol.md"><img src="https://img.shields.io/badge/Protocol-BB84%20QKD-blueviolet.svg?style=flat-square" alt="BB84 Protocol"></a>
+  <a href="#current-implementation-status"><img src="https://img.shields.io/badge/Status-Phases%201--9%20Complete-success.svg?style=flat-square" alt="Status"></a>
+  <a href="https://peps.python.org/pep-0008/"><img src="https://img.shields.io/badge/Code%20Style-PEP%208-black.svg?style=flat-square" alt="Code Style PEP 8"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License MIT"></a>
+</p>
 
-## Objective
+A research-grade simulation and experimental benchmark suite for the **BB84 Quantum Key Distribution (QKD)** protocol, built natively with **Qiskit** and **Qiskit Aer**.
 
-The project aims to demonstrate how quantum mechanics can be used for secure key distribution and how eavesdropping can be detected through quantum measurement disturbances.
+The platform accurately models single-photon quantum state preparation, quantum channel transmission with physical decoherence noise models, active eavesdropping via intercept-resend attacks, classical basis reconciliation, error parameter estimation, interactive parity-based information reconciliation, and universal privacy amplification via Toeplitz matrix hashing.
 
-## Planned Features
+---
 
-* BB84 quantum key distribution
-* Alice and Bob key generation
-* Quantum state preparation
-* Z-basis and X-basis encoding
-* Quantum measurement
-* Basis reconciliation
-* Key sifting
-* QBER calculation
-* Intercept-resend eavesdropping
-* Quantum noise simulation
-* Eavesdropping detection
-* Statistical experiment analysis
-* Data visualization
-* Privacy amplification
-* Optional execution on real quantum hardware
+## Table of Contents
 
-## Technology Stack
+- [Overview & Objectives](#overview--objectives)
+- [System Architecture & Visual Diagrams](#system-architecture--visual-diagrams)
+  - [1. End-to-End Protocol Flowchart](#1-end-to-end-protocol-flowchart)
+  - [2. Quantum & Classical Channel Interaction Sequence](#2-quantum--classical-channel-interaction-sequence)
+  - [3. Physical Quantum Channel Architecture](#3-physical-quantum-channel-architecture)
+- [Key Experimental Results & Visualizations](#key-experimental-results--visualizations)
+  - [Result 1: End-to-End Post-Processing & Key Distillation](#result-1-end-to-end-post-processing--key-distillation)
+  - [Result 2: Intercept-Resend Eavesdropping vs. QBER](#result-2-intercept-resend-eavesdropping-vs-qber)
+- [Current Implementation Status](#current-implementation-status)
+- [Quick Start & Installation](#quick-start--installation)
+- [Running Experiments & Demonstrations](#running-experiments--demonstrations)
+- [Automated Testing](#automated-testing)
+- [Theoretical Principles & Mathematical Summary](#theoretical-principles--mathematical-summary)
+- [Technology Stack](#technology-stack)
+- [Project Directory Structure](#project-directory-structure)
+- [Security Notice & Academic Scope](#security-notice--academic-scope)
+- [License](#license)
 
-* Python
-* Qiskit
-* Qiskit Aer
-* NumPy
-* Pandas
-* Matplotlib
-* Pytest
-* Git/GitHub
+---
+
+## Overview & Objectives
+
+Quantum Key Distribution allows two distant parties—**Alice** (transmitter) and **Bob** (receiver)—to generate a shared, secret random key with security guaranteed by the laws of quantum mechanics. Any unauthorized eavesdropper (**Eve**) attempting to measure or duplicate quantum carriers inevitably introduces detectable errors due to:
+
+1. **No-Cloning Theorem**: Arbitrary unknown quantum states cannot be perfectly copied.
+2. **Heisenberg Uncertainty Principle**: Measuring a quantum system in a non-orthogonal conjugate basis unavoidably perturbs the state.
+3. **Bohr's Principle of Complementarity**: Information gained about the computational ($Z$) basis destroys phase information in the Hadamard ($X$) basis, and vice versa.
+
+This project implements a complete, modular, and scientifically rigorous 9-phase architecture covering both quantum carrier transmission and classical post-processing key distillation.
+
+---
+
+## System Architecture & Visual Diagrams
+
+### 1. End-to-End Protocol Flowchart
+
+The simulation pipeline spans three distinct operational phases:
+
+```mermaid
+flowchart TD
+    subgraph Stage1["1. Quantum Carrier Transmission (Phases 2-4, 7, 8)"]
+        A["Alice: Encode Random Bits into BB84 States (|0>, |1>, |+>, |->)"] --> C["Quantum Channel"]
+        C -->|"Flying Qubits"| E{"Eve Active?"}
+        E -->|"Yes (p_eve)"| EA["Eve: Intercept, Measure & Resend Replacement"]
+        E -->|"No"| N{"Channel Noise?"}
+        EA --> N
+        N -->|"Yes (p_noise)"| NM["Physical Decoherence (Bit/Phase/Depol)"]
+        N -->|"No"| B["Bob: Projective Measurement in Random Basis (Z / X)"]
+        NM --> B
+    end
+
+    subgraph Stage2["2. Classical Key Sifting (Phases 5-6)"]
+        B --> S["Basis Reconciliation: Public Comparison (B_A == B_B)"]
+        S --> SK["Sifted Raw Key (~50% Sifting Retention)"]
+    end
+
+    subgraph Stage3["3. Classical Post-Processing Pipeline (Phase 9)"]
+        SK --> EE["Error Estimation: Disclose & Discard k Test Bits"]
+        EE --> QC{"Estimated QBER <= 11.0%?"}
+        QC -->|"No (Eve Detected / High Noise)"| ABORT["ABORT: Security Compromised (0 Secret Bits)"]
+        QC -->|"Yes (Channel Secure)"| IR["Information Reconciliation: Parity Check & Binary Search"]
+        IR -->|"Track Parity Bit Leakage"| PA["Privacy Amplification: GF(2) Toeplitz Universal Hashing"]
+        PA --> FK["Distilled Secret Key (Alice == Bob, 100% Identity)"]
+    end
+
+    style Stage1 fill:#f0f4ff,stroke:#2b5797,stroke-width:2px
+    style Stage2 fill:#f5f0ff,stroke:#6929c4,stroke-width:2px
+    style Stage3 fill:#f0fff4,stroke:#107c41,stroke-width:2px
+    style ABORT fill:#ffebe8,stroke:#d13438,stroke-width:2px
+    style FK fill:#e6ffed,stroke:#107c41,stroke-width:2px
+```
+
+---
+
+### 2. Quantum & Classical Channel Interaction Sequence
+
+The protocol coordinates quantum transmission across a fragile quantum channel followed by authenticated classical public exchanges:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Alice
+    participant QC as Quantum Channel
+    actor Eve as Eve (Eavesdropper)
+    actor Bob
+
+    rect rgb(240, 245, 255)
+    Note over Alice,Bob: STAGE 1: Quantum Transmission
+    Alice->>QC: Transmit single photons |ψ⟩ in Z or X basis
+    opt Eavesdropping (p_eve > 0)
+        QC->>Eve: Intercept flying qubit
+        Eve->>Eve: Measure in random basis (Z or X)
+        Eve->>QC: Resend collapsed replacement state
+    end
+    QC->>Bob: Deliver qubit (subject to physical channel noise)
+    Bob->>Bob: Measure in independently chosen basis (Z or X)
+    end
+
+    rect rgb(245, 240, 255)
+    Note over Alice,Bob: STAGE 2: Public Basis Reconciliation (Key Sifting)
+    Alice<<->>Bob: Publicly exchange basis choices (Z vs X)
+    Note over Alice,Bob: Keep bits where bases match (~50%), discard remainder
+    end
+
+    rect rgb(240, 255, 244)
+    Note over Alice,Bob: STAGE 3: Parameter Estimation & Key Distillation
+    Alice<<->>Bob: Disclose random sample of k test bits & discard them
+    Alice->>Alice: Compute sample QBER = e / k
+    Bob->>Bob: Compute sample QBER = e / k
+    alt QBER > 11.0% (Shor-Preskill Security Threshold Exceeded)
+        Note over Alice,Bob: ABORT PROTOCOL: Eavesdropping or extreme noise detected
+    else QBER <= 11.0% (Channel Authenticated as Secure)
+        Alice<<->>Bob: Interactive block-parity exchange & binary search correction
+        Note over Alice,Bob: Bob corrects all bit discrepancies; track parity leakage
+        Alice->>Alice: Hash reconciled key using shared Toeplitz matrix in GF(2)
+        Bob->>Bob: Hash reconciled key using shared Toeplitz matrix in GF(2)
+        Note over Alice,Bob: Identical Final Secret Key Distilled!
+    end
+    end
+```
+
+---
+
+### 3. Physical Quantum Channel Architecture
+
+The `QuantumChannel` acts directly on Qiskit `QuantumCircuit` objects prior to receiver measurement, seamlessly composing eavesdropping and environmental decoherence:
+
+```mermaid
+flowchart LR
+    A["Alice's Encoded State |ψ⟩"] --> QC["QuantumChannel Abstraction"]
+    subgraph Medium["Physical Channel Pipeline"]
+        QC -->|"Pass 1: Tapping Layer"| EVE{"Eve Present?"}
+        EVE -->|"Yes"| EACT["Eve Intercept-Resend: Measurement & State Re-preparation"]
+        EVE -->|"No"| NOISE{"Noise Configured?"}
+        EACT --> NOISE
+        NOISE -->|"Yes"| NMOD["Physical Noise Layer"]
+        subgraph Supported_Noise["Decoherence Models"]
+            NMOD -.-> BF["Bit-Flip: Pauli-X Channel (p)"]
+            NMOD -.-> PF["Phase-Flip: Pauli-Z Channel (p)"]
+            NMOD -.-> DP["Depolarizing: Aer Isotropic Channel (lambda)"]
+        end
+        NOISE -->|"No"| ID["Identity: Ideal Channel"]
+    end
+    NMOD --> B["Bob's Detector"]
+    ID --> B
+
+    style Medium fill:#fafafa,stroke:#666,stroke-dasharray: 5 5
+```
+
+---
+
+## Key Experimental Results & Visualizations
+
+### Result 1: End-to-End Post-Processing & Key Distillation
+
+The post-processing pipeline was benchmarked across **four distinct physical transmission regimes** (3,000 transmitted quantum signals per regime, $k=300$ test bits sampled for error estimation):
+
+![End-to-End Post-Processing Benchmark](results/phase9_end_to_end.png)
+*Figure 1: Full end-to-end post-processing benchmarks across ideal, noisy, eavesdropped, and combined channel regimes.*
+
+#### Quantitative Benchmark Results
+
+| Transmission Regime | Signals | Sifted Key | Est. QBER | Decision | Errors Corrected | Parity Leakage | Final Secret Key | Key Agreement |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **1. Ideal Channel** | 3,000 | 1,522 bits | **0.00%** | **ACCEPTED** | 0 bits | 77 bits | **913 bits** | **100% Match** |
+| **2. Quantum Noise ($p=4\%$)** | 3,000 | 1,485 bits | **2.02%** | **ACCEPTED** | 37 bits | 373 bits | **662 bits** | **100% Match** |
+| **3. Eve Attack ($p=100\%$)** | 3,000 | 1,456 bits | **23.71%** | **ABORTED** | 0 bits | 0 bits | **0 bits** | N/A (Aborted) |
+| **4. Eve + Noise Combined** | 3,000 | 1,486 bits | **27.27%** | **ABORTED** | 0 bits | 0 bits | **0 bits** | N/A (Aborted) |
+
+> **Key Takeaway**: Under legitimate benign channel noise ($2.02\%$ QBER), the pipeline successfully corrects all bit errors and distills $662$ identical secret bits. In contrast, under Eve's attack ($23.71\%$ and $27.27\%$ QBER), the protocol immediately halts at parameter estimation, denying Eve any confidential key material.
+
+---
+
+### Result 2: Intercept-Resend Eavesdropping vs. QBER
+
+In an intercept-resend attack, Eve intercepts flying qubits, measures each in a randomly chosen basis ($Z$ or $X$), and retransmits the collapsed state to Bob. We swept Eve's interception probability from $p_{\text{eve}} = 0.0$ to $1.0$ across 2,000 signals per point:
+
+![Eve Interception Probability vs QBER](results/phase7_eve_probability.png)
+*Figure 2: Empirical Quantum Bit Error Rate (QBER) as a function of Eve's interception probability $p_{\text{eve}}$, validating the theoretical $25\%$ slope and the $11\%$ security threshold.*
+
+#### Theoretical vs. Empirical Dynamics
+
+- **Theoretical Slope**: $\text{QBER}(p_{\text{eve}}) = p_{\text{eve}} \times 25.0\%$.
+- **Empirical Confirmation**: At full interception ($p_{\text{eve}} = 1.0$), the observed QBER is $\approx 25.10\%$, closely matching theory ($R^2 > 0.99$).
+- **Shor-Preskill Abort Threshold**: Any eavesdropping activity where $p_{\text{eve}} \ge 44\%$ exceeds the critical $11.0\%$ threshold, guaranteeing detection prior to privacy amplification.
+
+---
 
 ## Current Implementation Status
 
-- Phase 1 — Project architecture ✓
-- Phase 2 — Quantum primitives ✓
-- Phase 3 — Alice ✓
-- Phase 4 — Bob and quantum channel ✓
-- Phase 5 — Basis reconciliation and key sifting ✓
-- Phase 6 — QBER analysis ✓
-- Phase 7 — Eve intercept-resend attack ✓
-- Phase 8 — Quantum noise and noisy channel ✓
+All 9 development phases are fully implemented, verified, and backed by 166 passing unit and integration tests:
 
-## Project Status
+| Phase | Module | Primary Components | Status |
+| :---: | :--- | :--- | :---: |
+| **1** | Architecture & Config | Modular package layout, `BB84Config`, environment isolation | `COMPLETE` |
+| **2** | Quantum Primitives | $|0\rangle, |1\rangle, |+\rangle, |-\rangle$ state preparation, projective measurement, circuit helpers | `COMPLETE` |
+| **3** | Alice (Sender) | Independent local RNG, bit & basis generation, `BB84Signal` encoding | `COMPLETE` |
+| **4** | Bob & Quantum Channel | Independent measurement bases, detector simulation, `QuantumChannel` pipeline | `COMPLETE` |
+| **5** | Key Sifting | Classical basis reconciliation, matched index filtering, empirical $\approx 50\%$ sifting ratio | `COMPLETE` |
+| **6** | QBER Analysis | Sifted key comparison, exact QBER formula, diagnostic classical error injector | `COMPLETE` |
+| **7** | Eve Eavesdropping | Quantum intercept-resend attacker, partial/full interception, $25\%$ error induction | `COMPLETE` |
+| **8** | Quantum Noise Models | Physical single-qubit decoherence: Bit-Flip ($X$), Phase-Flip ($Z$), Depolarizing ($\lambda$) | `COMPLETE` |
+| **9** | Classical Post-Processing | Random test-bit estimation, threshold abort, parity reconciliation, Toeplitz PA | `COMPLETE` |
 
-- [x] **Phase 1** — Environment, project architecture, and configuration setup completed.
-- [x] **Phase 2** — Fundamental quantum primitives completed (state preparation for |0>, |1>, |+>, |->, projective Z and X basis measurements, statevector analysis, and comprehensive unit tests).
-- [x] **Phase 3** — Alice (Sender) component completed (random bit & basis generation, state encoding into `BB84Signal`, private classical state encapsulation, and unit tests).
-- [x] **Phase 4** — Bob (Receiver) component & quantum channel transmission completed (independent random basis selection, projective measurement, Alice-to-Bob signal transmission, and integration tests).
-- [x] **Phase 5** — Classical basis reconciliation & key sifting completed (public basis comparison, matched-basis key filtering, sifting ratio analysis, and unit tests).
-- [x] **Phase 6** — Quantum Bit Error Rate (QBER) analysis & security baseline completed (sifted key comparison, diagnostic classical error injection, convergence statistics, and validation plots).
-- [x] **Phase 7** — Eve (Eavesdropper) intercept-resend attack completed. The simulator models an intercept-resend eavesdropping attack at the quantum-state level and experimentally evaluates its effect on QBER.
-- [x] **Phase 8** — Quantum noise and noisy channel completed. Implemented quantum state-level noise models (Bit-Flip, Phase-Flip, and Depolarizing channels adhering to Qiskit Aer's specification) with integrated channel composition supporting independent Eve + Noise experimentation.
-- [ ] **Phase 9** — Classical Post-Processing: Error Correction & Privacy Amplification (upcoming).
+---
 
-## Project Structure
+## Quick Start & Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/DineshMoorthy007/BB84-quantum-key-distribution.git
+cd BB84-quantum-key-distribution
+```
+
+### 2. Set Up Virtual Environment
+
+```bash
+# Create virtual environment
+python -m venv .venv
+
+# Activate on Windows:
+.venv\Scripts\activate
+
+# Activate on Linux / macOS:
+source .venv/bin/activate
+```
+
+### 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Run the 10-Second End-to-End Verification
+
+```bash
+python experiments/phase9_end_to_end.py
+```
+
+---
+
+## Running Experiments & Demonstrations
+
+Each protocol phase includes self-contained, reproducible experiment and demonstration scripts:
+
+```bash
+# Phase 2 — Quantum State Preparation & Projective Measurement
+python experiments/phase2_quantum_primitives.py
+
+# Phase 3 — Alice Signal Generation
+python experiments/phase3_alice.py --signals 10 --seed 42
+
+# Phase 4 — Alice -> Quantum Channel -> Bob Transmission
+python experiments/phase4_alice_bob.py --signals 16 --alice-seed 42 --bob-seed 99
+
+# Phase 5 — Basis Reconciliation & Sifting Ratio Validation
+python experiments/phase5_key_sifting.py --signals 1000 --seed-alice 42 --seed-bob 99
+
+# Phase 6 — QBER Baseline Analysis & Controlled Classical Error Injection
+python experiments/phase6_qber_analysis.py --signals 1000 --seed 42
+
+# Phase 7 — Eavesdropping Experiments:
+python experiments/phase7_eve_comparison.py     # Ideal vs. Full Eve comparison
+python experiments/phase7_eve_probability.py    # Interception probability sweep (0% to 100%)
+python experiments/phase7_convergence.py        # Statistical convergence across signal volumes
+
+# Phase 8 — Quantum Decoherence Noise Experiments:
+python experiments/phase8_noise_comparison.py   # Bit-flip vs Phase-flip vs Depolarizing
+python experiments/phase8_noise_sweep.py        # Noise strength parameter sweep
+python experiments/phase8_phase_noise_basis.py  # Demonstration of phase-flip basis asymmetry
+python experiments/phase8_eve_vs_noise.py       # Eavesdropping vs environmental noise
+python experiments/phase8_statistics.py         # Multi-trial statistical variability
+
+# Phase 9 — Classical Post-Processing Pipeline:
+python experiments/phase9_error_estimation.py      # Random test-bit estimation & key pruning
+python experiments/phase9_error_correction.py      # Parity-based error correction
+python experiments/phase9_privacy_amplification.py # Toeplitz universal hashing in GF(2)
+python experiments/phase9_end_to_end.py            # Complete four-regime benchmark
+```
+
+---
+
+## Automated Testing
+
+The project includes an extensive automated test suite covering all modules:
+
+```bash
+# Run the complete test suite (166 tests across all 9 phases)
+pytest -q
+```
+
+Expected output:
+```text
+........................................................................ [ 43%]
+........................................................................ [ 86%]
+......................                                                   [100%]
+166 passed in 37.82s
+```
+
+Test breakdown by module:
+- `tests/test_quantum_primitives.py` — State preparation, basis validation, global phases
+- `tests/test_alice.py` — Local bit/basis generation, signal encoding
+- `tests/test_bob.py` — Independent basis generation, measurement accuracy
+- `tests/test_quantum_channel.py` — Channel state propagation and composition
+- `tests/test_key_sifting.py` — Matched index filtering, discard logic
+- `tests/test_qber.py` & `test_error_injection.py` — QBER calculation and diagnostic injection
+- `tests/test_eve.py` & `test_eve_integration.py` — Intercept-resend attack mechanics
+- `tests/test_noise.py` & `test_noise_integration.py` — Physical noise channels and basis asymmetries
+- `tests/test_error_estimation.py` — Parameter estimation, sample pruning, abort conditions
+- `tests/test_error_correction.py` — Block parity correction, leakage tracking, multi-pass convergence
+- `tests/test_privacy_amplification.py` — Toeplitz matrix construction, GF(2) hashing, key compression
+- `tests/test_post_processing.py` — End-to-end integration and security decisions
+
+---
+
+## Theoretical Principles & Mathematical Summary
+
+| Protocol Stage | Physical / Mathematical Mechanism | Academic Principle | Expected Theoretical Value |
+| :--- | :--- | :--- | :--- |
+| **State Encoding** | Random bit $b \in \{0, 1\}$, random basis $\in \{Z, X\}$ | Non-orthogonal state preparation | $\{|0\rangle, |1\rangle, |+\rangle, |-\rangle\}$ |
+| **Key Sifting** | Retain bits where $B_A = B_B$, discard mismatches | Mutual unbiasedness ($|\langle z \mid x \rangle|^2 = \frac{1}{2}$) | Sifting ratio $\approx 50\%$ |
+| **Ideal Channel** | Unperturbed eigenstate transmission | Unitary identity | $\text{QBER} = 0.00\%$ |
+| **Eve Intercept-Resend** | Measure in random basis, prepare replacement | No-Cloning Theorem & state collapse | $\text{QBER} = p_{\text{eve}} \times 25.0\%$ |
+| **Bit-Flip Noise** | Pauli-$X$ applied with probability $p$ | Basis asymmetry ($Z$ flipped, $X$ invariant) | $\text{QBER} = p / 2$ |
+| **Phase-Flip Noise** | Pauli-$Z$ applied with probability $p$ | Basis asymmetry ($X$ flipped, $Z$ invariant) | $\text{QBER} = p / 2$ |
+| **Depolarizing Noise** | $\mathcal{E}(\rho) = (1-\lambda)\rho + \lambda \frac{I}{2}$ | Isotropic state decoherence | $\text{QBER} = \lambda / 2$ |
+| **Parameter Estimation** | Sample $k$ test bits without replacement, prune sample | Privacy preservation & statistical sampling | $\widehat{\text{QBER}} = e / k$ |
+| **Information Reconciliation** | Interactive block-parity bisection | Shannon information reconciliation | Bit discrepancies $\to 0$ |
+| **Privacy Amplification** | $K_{\text{final}} = (M_{\text{Toeplitz}} \cdot K_{\text{reconciled}}) \pmod 2$ | Leftover Hash Lemma & 2-Universal Hashing | $m \le n(1 - h_2(Q)) - \text{leakage}$ |
+
+---
+
+## Technology Stack
+
+- **Core Language**: Python 3.10+ with strict type annotations
+- **Quantum Circuit Framework**: [Qiskit 2.5.2](https://qiskit.org/)
+- **Quantum Simulator**: [Qiskit Aer 0.17.2](https://github.com/Qiskit/qiskit-aer) (Statevector & QASM shot simulation)
+- **Scientific Computing**: NumPy 2.x (Local PRNG, binary matrix algebra in $\text{GF}(2)$)
+- **Data Analysis**: Pandas (Experiment tabular logging)
+- **Plotting & Visualization**: Matplotlib (Multi-panel figures, scatter sweeps, error bars)
+- **Test Automation**: Pytest (166 automated tests)
+
+---
+
+## Project Directory Structure
 
 ```text
 bb84-quantum-key-distribution/
-├── docs/            # Protocol documentation and theoretical background
-├── experiments/     # Parametric study, benchmarks, and demonstration scripts
-├── hardware/        # Real quantum device connectors (Qiskit Runtime)
-├── noise/           # Quantum channel noise models (depolarizing, bit/phase-flip)
-├── results/         # Output artifacts (simulation logs, datasets, plots)
-├── simulator/       # Qiskit Aer backend and circuit execution managers
-├── src/             # Core protocol logic (Alice, Bob, Eve, Channel, Sifting, QBER, Error Injection)
-├── tests/           # Automated pytest test suites
-└── visualization/   # Decoupled plotting routines (Matplotlib)
+├── docs/                      # Academic documentation & theoretical derivations
+│   └── bb84_protocol.md       # Comprehensive protocol theory & mathematical proofs
+├── experiments/               # Reproducible experiment scripts (Phases 2-9)
+│   ├── phase2_quantum_primitives.py
+│   ├── phase3_alice.py
+│   ├── phase4_alice_bob.py
+│   ├── phase5_key_sifting.py
+│   ├── phase6_qber_analysis.py
+│   ├── phase7_*.py            # Eve intercept-resend experiments
+│   ├── phase8_*.py            # Quantum noise experiments
+│   └── phase9_*.py            # Classical post-processing experiments
+├── hardware/                  # Real quantum device connectors (Qiskit Runtime placeholder)
+├── noise/                     # Physical quantum decoherence noise models:
+│   ├── base.py                # Abstract quantum noise base class
+│   ├── bit_flip.py            # Pauli-X bit-flip channel
+│   ├── phase_flip.py          # Pauli-Z phase-flip channel
+│   └── depolarizing.py        # Isotropic depolarizing channel
+├── results/                   # Benchmark plots & figure outputs
+│   ├── phase7_eve_probability.png
+│   ├── phase9_end_to_end.png
+│   └── ...
+├── simulator/                 # Qiskit Aer execution managers and backend wrappers
+├── src/                       # Core BB84 protocol implementation:
+│   ├── alice.py               # Alice sender (bit/basis generation, signal encoding)
+│   ├── bob.py                 # Bob receiver (measurement bases, detection)
+│   ├── config.py              # Global protocol configuration dataclasses
+│   ├── error_correction.py    # Parity-based information reconciliation
+│   ├── error_estimation.py    # Random test-bit parameter estimation
+│   ├── error_injection.py     # Classical error injector (diagnostic testing only)
+│   ├── eve.py                 # Eve intercept-resend eavesdropper
+│   ├── key_sifting.py         # Basis reconciliation & matched key sifting
+│   ├── post_processing.py     # End-to-end post-processing pipeline orchestrator
+│   ├── privacy_amplification.py # GF(2) Toeplitz universal hashing
+│   ├── qber.py                # Quantum Bit Error Rate calculation & thresholds
+│   ├── quantum_channel.py     # Physical transmission medium (Eve + Noise)
+│   └── quantum_primitives.py  # BB84 state preparation & projective measurement
+├── tests/                     # Comprehensive test suite (166 passing tests)
+├── visualization/             # Decoupled visualization and plotting routines
+├── requirements.txt           # Pinned project dependencies
+└── README.md                  # Project overview, documentation & benchmarks
 ```
 
-## Running the Demonstrations
+---
 
-Execute the phase-specific educational demonstration scripts:
+## Security Notice & Academic Scope
 
-```bash
-# Phase 2 — Quantum Primitives Demonstration
-.venv\Scripts\python experiments/phase2_quantum_primitives.py
+> [!IMPORTANT]
+> **Academic Scope Notice**:
+> This simulator accurately models single-qubit quantum state vectors, unitary operators, physical noise channels, projective measurements, and classical post-processing pipelines for academic study and research.
+>
+> While it accurately reproduces empirical error rates and quantum mechanical statistics:
+> - It does not provide a formal composable mathematical security proof against arbitrary coherent attacks in the finite-key regime.
+> - In commercial production deployments, classical channels require information-theoretically secure message authentication (e.g., Wegman-Carter MACs), and security thresholds must be derived from smooth min-entropy bounds.
 
-# Phase 3 — Alice (Sender) Demonstration
-.venv\Scripts\python experiments/phase3_alice.py --signals 10 --seed 42
+---
 
-# Phase 4 — Alice -> QuantumChannel -> Bob Transmission Demonstration
-.venv\Scripts\python experiments/phase4_alice_bob.py --signals 16 --alice-seed 42 --bob-seed 99
+## License
 
-# Phase 5 — Basis Reconciliation & Key Sifting Demonstration
-.venv\Scripts\python experiments/phase5_key_sifting.py --signals 1000 --seed-alice 42 --seed-bob 99
-
-# Phase 6 — QBER Baseline Analysis & Controlled Classical Error Experiment
-.venv\Scripts\python experiments/phase6_qber_analysis.py --signals 1000 --seed 42
-
-# Phase 6 — QBER Statistical Convergence Study
-.venv\Scripts\python experiments/phase6_statistics.py --error-rate 0.10 --seed 42
-
-# Phase 7 — Experiment 1: No-Eve vs Full-Eve Benchmark
-.venv\Scripts\python experiments/phase7_eve_comparison.py
-
-# Phase 7 — Experiment 2: Eve Interception Probability Sweep
-.venv\Scripts\python experiments/phase7_eve_probability.py
-
-# Phase 7 — Experiment 3: Statistical Convergence of Intercept-Resend QBER
-.venv\Scripts\python experiments/phase7_convergence.py
-
-# Phase 8 — Experiment 1: Quantum Noise Model Comparison
-.venv\Scripts\python experiments/phase8_noise_comparison.py
-
-# Phase 8 — Experiment 2: Quantum Noise Parameter Sweep
-.venv\Scripts\python experiments/phase8_noise_sweep.py
-
-# Phase 8 — Experiment 3: Basis-Dependent Phase Noise Investigation
-.venv\Scripts\python experiments/phase8_phase_noise_basis.py
-
-# Phase 8 — Experiment 4: Eavesdropping vs. Environmental Quantum Noise
-.venv\Scripts\python experiments/phase8_eve_vs_noise.py
-
-# Phase 8 — Experiment 5: Statistical Variability of Quantum Noise
-.venv\Scripts\python experiments/phase8_statistics.py
-```
-
-
-
-
-
-## Running Tests
-
-Run the full automated test suite using the virtual environment:
-
-```bash
-# Windows
-.venv\Scripts\pytest -v
-
-# Linux / macOS
-source .venv/bin/activate && pytest -v
-```
-
-## Research Direction
-
-The project experimentally investigates the relationship between eavesdropping, quantum noise, and Quantum Bit Error Rate (QBER) in the BB84 protocol.
-
-
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

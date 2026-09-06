@@ -404,6 +404,68 @@ Quantum state preparation, noise application, and measurement are stochastic pro
 
 ---
 
+## 2.8 Phase 9 — Classical Post-Processing (Error Estimation, Reconciliation & Privacy Amplification)
+
+The classical post-processing layer converts raw sifted keys into identical, information-theoretically secure cryptographic secret keys:
+```text
+Sifted Keys (Alice & Bob)
+         ↓
+1. Error Estimation (Disclose test bits, calculate QBER, discard test bits)
+         ↓
+2. Security Threshold Decision (Accept if QBER <= 11%, else Abort)
+         ↓
+3. Information Reconciliation (Parity-based error correction & leakage tracking)
+         ↓
+4. Privacy Amplification (Toeplitz matrix hashing in GF(2))
+         ↓
+Final Distilled Secret Key (Identical & Unconditionally Secure)
+```
+
+### 1. Parameter Estimation
+Parameter estimation allows Alice and Bob to infer the Quantum Bit Error Rate (QBER) of the transmission channel without measuring or compromising the entire key:
+- **Sampling Subset**: Alice and Bob choose a random subset of bit positions $K_{\text{test}} \subset \{0, \dots, n-1\}$ of size $k$.
+- **Why Bits Must Be Revealed**: To compute the exact error count, the values at $K_{\text{test}}$ are publicly exchanged over the classical channel.
+- **Permanent Removal**: Because the test bits have been publicly broadcast over the classical channel, they are completely exposed to Eve. Therefore, Alice and Bob **must permanently discard** all disclosed test bits from both keys prior to subsequent post-processing.
+- **Unbiased Estimate**: The observed error fraction $\widehat{\text{QBER}} = \frac{e_{\text{test}}}{k}$ serves as an unbiased statistical estimator of channel fidelity.
+
+### 2. Security Decision (Acceptance vs. Rejection)
+Alice and Bob compare $\widehat{\text{QBER}}$ against an asymptotic security threshold (e.g., the Shor-Preskill bound $\approx 11.0\%$ for BB84 with one-way classical processing):
+- **If $\widehat{\text{QBER}} \le 11.0\%$**: The correlation between Alice and Bob exceeds Eve's potential mutual information. The run is **ACCEPTED**, proceeding to reconciliation and privacy amplification.
+- **If $\widehat{\text{QBER}} > 11.0\%$**: Eavesdropping or channel degradation is excessive. Error correction and privacy amplification cannot guarantee a positive secret key rate. The protocol **ABORTS** immediately; no key is issued.
+
+### 3. Information Reconciliation (Parity-Based Error Correction)
+Reconciliation corrects discrepancies between Alice's and Bob's remaining keys:
+- **Block Parity Checking**: Keys are partitioned into blocks. For each block, Alice sends the 1-bit parity $P = \sum b_i \pmod 2$.
+- **Interactive Binary Search**: If parities disagree, an odd number of discrepancies exists. Alice and Bob bisect the block and exchange sub-block parities until a single discordant bit index is isolated.
+- **In-Place Correction**: Bob flips his corresponding bit in-place ($b_i \oplus 1$). Bob's key is genuinely corrected through algorithmic localization rather than by replacing Bob's key with Alice's key.
+- **Multi-Pass Permutations**: Because blocks with an even number of errors exhibit identical parity, multiple passes with deterministic pseudo-random shuffling are used to disperse paired errors across different blocks.
+
+### 4. Public Information Leakage
+Every parity bit announced over the classical channel reveals linear constraints to Eve:
+$$\text{Reconciliation Leakage} = \sum (\text{Block Parities}) + \sum (\text{Binary Search Parities})$$
+This leaked information compromises key secrecy unless explicitly compensated for during privacy amplification.
+
+### 5. Privacy Amplification & Toeplitz Hashing
+Privacy amplification compresses the $n$-bit reconciled key into an $m$-bit final key ($m < n$) using universal hashing:
+- **Leftover Hash Lemma**: By hashing with a 2-universal family, Eve's mutual information about the final key is reduced to an exponentially negligible fraction $2^{-s}$.
+- **Toeplitz Matrix**: A random binary matrix $M \in \{0, 1\}^{m \times n}$ where each descending diagonal is constant ($M_{i, j} = t_{i - j}$).
+- **Binary Arithmetic in $\text{GF}(2)$**:
+  $$K_{\text{final}} = (M \cdot K_{\text{reconciled}}) \pmod 2$$
+  The operation is computed strictly modulo 2 with zero floating-point representation.
+- **Identical Matrix**: Alice and Bob use the same public random seed to generate $M$, ensuring that identical reconciled inputs produce identical final secret keys.
+
+### 6. Limitations & Academic Scope Notice
+> [!IMPORTANT]
+> **Academic Scope Notice**:
+> This simulator demonstrates the conceptual workflow of BB84 classical post-processing. It is not a production-grade QKD implementation and does not provide a formal composable security proof.
+> 
+> In a real-world commercial QKD deployment:
+> - The classical channel must be authenticated using unconditional MACs (e.g., Wegman-Carter authentication).
+> - Rigorous finite-key security bounds (e.g., Renner's smooth min-entropy framework) must be evaluated to account for statistical fluctuations.
+> - High-efficiency error correction algorithms such as multi-dimensional LDPC or full Cascade with backtracking are used.
+
+---
+
 ## 3. Protocol Execution Steps
 
 1. **State Preparation (Alice)**:
