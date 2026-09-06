@@ -4,6 +4,7 @@ Core source package for quantum state preparation, measurement,
 and protocol execution.
 """
 
+from .alice import Alice, BB84Signal
 from .config import BB84Config, NoiseModelType
 from .quantum_primitives import (
     COMPUTATIONAL_BASIS,
@@ -26,6 +27,8 @@ from .quantum_primitives import (
 )
 
 __all__ = [
+    "Alice",
+    "BB84Signal",
     "BB84Config",
     "NoiseModelType",
     "COMPUTATIONAL_BASIS",
@@ -46,4 +49,5 @@ __all__ = [
     "validate_bit",
     "validate_basis",
 ]
+
 

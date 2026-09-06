@@ -81,6 +81,43 @@ When a state prepared in one basis is measured in the conjugate basis (e.g., mea
 
 ---
 
+## 2.2 Phase 3 — Alice
+
+The Alice component (`src/alice.py`) implements the sender role in the BB84 protocol, executing the quantum state preparation stage.
+
+### 1. Why Alice Generates Random Bits
+The ultimate goal of QKD is to establish a shared one-time pad or symmetric encryption key. A cryptographic key must possess maximum information entropy ($H(K) = |K|$); any deterministic pattern or predictability allows an adversary to infer key bits without measuring photons. Alice therefore generates uniformly distributed, uncorrelated binary values $a_i \in \{0, 1\}$.
+
+### 2. Why Alice Randomly Selects Between X and Z Bases
+Alice independently and uniformly chooses a basis $b_{A, i} \in \{Z, X\}$ for each bit. Random basis selection ensures that an eavesdropper cannot know in advance which basis was used to prepare any given photon. Because the two bases are mutually unbiased, an eavesdropper measuring in the wrong basis inevitably induces quantum state collapse and introduces detectable errors ($25\%$ QBER).
+
+### 3. How the Bit + Basis Pair Determines the Quantum State
+Each bit $a_i$ is mapped to a quantum state $|\psi_i\rangle$ according to Alice's basis choice $b_{A, i}$:
+- $(0, Z) \to |0\rangle$: Ground computational state
+- $(1, Z) \to |1\rangle$: Excited computational state (via Pauli-$X$)
+- $(0, X) \to |+\rangle$: Symmetric superposition (via Hadamard $H$)
+- $(1, X) \to |-\rangle$: Anti-symmetric superposition (via $X$ then $H$)
+
+### 4. Why Alice Must Keep Her Bits and Bases Private
+Alice's classical sequences are her strictly guarded private state:
+- If Alice revealed her **bits** prematurely, no quantum transmission would be secret.
+- If Alice revealed her **bases** prior to Bob's measurement, an eavesdropper monitoring the classical channel could intercept the photon, measure in the known basis with $0\%$ error, and forward the unperturbed state to Bob completely undetected.
+Alice only reveals her basis choices during the **classical basis reconciliation stage**, after Bob confirms receipt and measurement of all transmitted qubits.
+
+### 5. Why Randomness is Fundamental in BB84
+Randomness is required at two levels:
+1. **Bit entropy**: Ensures the final shared key is cryptographically secure and incompressible.
+2. **Basis unpredictability**: Prevents side-channel basis prediction by Eve. Pseudo-random generators must use independent, reproducible local seeds for scientific analysis, while production QKD relies on Quantum Random Number Generators (QRNGs).
+
+### 6. Connection to the Future Bob Component
+The Alice module encapsulates private classical information while exposing a clean quantum transmission interface:
+- **Transmitted Data**: A list of independent `QuantumCircuit` carrier objects sent through the quantum channel.
+- **Shielded Data**: Alice's internal bit array $A_{\text{raw}}$ and basis array $B_A$ remain sealed.
+In Phase 4, Bob will receive these quantum circuits, generate his own independent random basis sequence $B_B$, perform projective measurements along $B_B$, and record his measured outcomes $B_{\text{raw}}$ without having seen Alice's bases.
+
+---
+
+
 
 ## 3. Protocol Execution Steps
 

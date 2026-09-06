@@ -39,7 +39,8 @@ The project aims to demonstrate how quantum mechanics can be used for secure key
 
 - [x] **Phase 1** — Environment, project architecture, and configuration setup completed.
 - [x] **Phase 2** — Fundamental quantum primitives completed (state preparation for $|0\rangle, |1\rangle, |+\rangle, |-\rangle$, projective $Z$/$X$ measurements, statevector analysis, and comprehensive unit tests).
-- [ ] **Phase 3** — Alice & Bob key generation, quantum channel, and basic protocol simulation (upcoming).
+- [x] **Phase 3** — Alice (Sender) component completed (random bit & basis generation, state encoding into `BB84Signal`, private classical state encapsulation, and unit tests).
+- [ ] **Phase 4** — Bob (Receiver) component & quantum channel transmission (upcoming).
 
 ## Project Structure
 
@@ -51,22 +52,23 @@ bb84-quantum-key-distribution/
 ├── noise/           # Quantum channel noise models (depolarizing, bit/phase-flip)
 ├── results/         # Output artifacts (simulation logs, datasets, plots)
 ├── simulator/       # Qiskit Aer backend and circuit execution managers
-├── src/             # Core protocol logic, quantum primitives, and config
+├── src/             # Core protocol logic (Alice, quantum primitives, config)
 ├── tests/           # Automated pytest test suites
 └── visualization/   # Decoupled plotting routines (Matplotlib)
 ```
 
 ## Running the Demonstrations
 
-Execute the Phase 2 quantum primitives demonstration:
+Execute the phase-specific educational demonstration scripts:
 
 ```bash
-# Windows
+# Phase 2 — Quantum Primitives Demonstration
 .venv\Scripts\python experiments/phase2_quantum_primitives.py
 
-# Linux / macOS
-python experiments/phase2_quantum_primitives.py
+# Phase 3 — Alice (Sender) Demonstration
+.venv\Scripts\python experiments/phase3_alice.py --signals 10 --seed 42
 ```
+
 
 ## Running Tests
 
