@@ -37,8 +37,36 @@ The project aims to demonstrate how quantum mechanics can be used for secure key
 
 ## Project Status
 
-Phase 1 — Environment and project setup
+Phase 1 — Environment, project architecture, and configuration setup completed.
+
+## Project Structure
+
+```text
+bb84-quantum-key-distribution/
+├── docs/            # Protocol documentation and theoretical background
+├── experiments/     # Parametric study and simulation benchmark scripts
+├── hardware/        # Real quantum device connectors (Qiskit Runtime)
+├── noise/           # Quantum channel noise models (depolarizing, bit/phase-flip)
+├── results/         # Output artifacts (simulation logs, datasets, plots)
+├── simulator/       # Qiskit Aer backend and circuit execution managers
+├── src/             # Core protocol logic and simulation configuration
+├── tests/           # Automated pytest test suites
+└── visualization/   # Decoupled plotting routines (Matplotlib)
+```
+
+## Running Tests
+
+Run the test suite using the virtual environment:
+
+```bash
+# Windows
+.venv\Scripts\pytest -v
+
+# Linux / macOS
+source .venv/bin/activate && pytest -v
+```
 
 ## Research Direction
 
 The project will experimentally investigate the relationship between eavesdropping, quantum noise, and Quantum Bit Error Rate (QBER) in the BB84 protocol.
+
