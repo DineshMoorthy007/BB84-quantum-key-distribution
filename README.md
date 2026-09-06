@@ -146,7 +146,7 @@ sequenceDiagram
     else QBER <= 11.0% (Channel Authenticated Secure)
         Alice->>CC: 10. Interactive block-parity exchange
         Bob->>CC: 10. Interactive block-parity exchange
-        Note over Alice,Bob: Bob corrects bit flips; track total parity leakage
+        Note over Alice,Bob: Bob corrects bit flips and tracks parity leakage
         Alice->>Alice: 11. Universal Toeplitz hashing in GF(2)
         Bob->>Bob: 11. Universal Toeplitz hashing in GF(2)
         Note over Alice,Bob: Identical Final Secret Key Distilled!
@@ -160,7 +160,7 @@ sequenceDiagram
 The `QuantumChannel` acts directly on Qiskit `QuantumCircuit` objects prior to receiver measurement, seamlessly composing eavesdropping and environmental decoherence:
 
 ```mermaid
-flowchart LR
+flowchart TD
     subgraph Channel["Physical Transmission Pipeline"]
         direction LR
         A["Alice: State Preparation<br/>|ψ⟩ ∈ {|0⟩, |1⟩, |+⟩, |–⟩}"] --> EVE["Layer 1: Eve Tapping<br/>(Intercept-Resend Attack)"]
@@ -168,14 +168,14 @@ flowchart LR
         NOISE --> B["Bob: Projective Detection<br/>(Z or X Basis)"]
     end
 
-    subgraph Models["Supported Noise Models"]
-        direction TB
-        BF["Bit-Flip: Pauli-X Channel<br/>Z-basis error |0⟩↔|1⟩, X-basis invariant"]
-        PF["Phase-Flip: Pauli-Z Channel<br/>X-basis error |+⟩↔|–⟩, Z-basis invariant"]
-        DP["Depolarizing: Qiskit Aer<br/>Isotropic degradation with parameter λ"]
+    subgraph Models["Supported Quantum Noise Models"]
+        direction LR
+        BF["Bit-Flip: Pauli-X Channel<br/>Flips Z-basis, X-basis invariant"]
+        PF["Phase-Flip: Pauli-Z Channel<br/>Flips X-basis, Z-basis invariant"]
+        DP["Depolarizing: Qiskit Aer<br/>Isotropic degradation (λ)"]
     end
 
-    NOISE -.->|"Applies"| Models
+    NOISE -->|"Applies"| Models
 
     classDef channelBox fill:#1e293b,stroke:#3b82f6,stroke-width:1.5px,color:#f8fafc;
     classDef noiseBox fill:#1e293b,stroke:#8b5cf6,stroke-width:1.5px,color:#f8fafc;
