@@ -43,6 +43,7 @@ The project aims to demonstrate how quantum mechanics can be used for secure key
 - Phase 4 — Bob and quantum channel ✓
 - Phase 5 — Basis reconciliation and key sifting ✓
 - Phase 6 — QBER analysis ✓
+- Phase 7 — Eve intercept-resend attack ✓
 
 ## Project Status
 
@@ -52,7 +53,8 @@ The project aims to demonstrate how quantum mechanics can be used for secure key
 - [x] **Phase 4** — Bob (Receiver) component & quantum channel transmission completed (independent random basis selection, projective measurement, Alice-to-Bob signal transmission, and integration tests).
 - [x] **Phase 5** — Classical basis reconciliation & key sifting completed (public basis comparison, matched-basis key filtering, sifting ratio analysis, and unit tests).
 - [x] **Phase 6** — Quantum Bit Error Rate (QBER) analysis & security baseline completed (sifted key comparison, diagnostic classical error injection, convergence statistics, and validation plots).
-- [ ] **Phase 7** — Eve (Eavesdropper) & intercept-resend attack simulation (upcoming).
+- [x] **Phase 7** — Eve (Eavesdropper) intercept-resend attack completed. The simulator now models an intercept-resend eavesdropping attack at the quantum-state level and experimentally evaluates its effect on QBER. (Note: QBER evaluation alone does not constitute a complete mathematical security proof).
+- [ ] **Phase 8** — Quantum Channel Noise Models (upcoming).
 
 ## Project Structure
 
@@ -64,7 +66,7 @@ bb84-quantum-key-distribution/
 ├── noise/           # Quantum channel noise models (depolarizing, bit/phase-flip)
 ├── results/         # Output artifacts (simulation logs, datasets, plots)
 ├── simulator/       # Qiskit Aer backend and circuit execution managers
-├── src/             # Core protocol logic (Alice, Bob, Channel, Sifting, QBER, Error Injection)
+├── src/             # Core protocol logic (Alice, Bob, Eve, Channel, Sifting, QBER, Error Injection)
 ├── tests/           # Automated pytest test suites
 └── visualization/   # Decoupled plotting routines (Matplotlib)
 ```
@@ -91,6 +93,15 @@ Execute the phase-specific educational demonstration scripts:
 
 # Phase 6 — QBER Statistical Convergence Study
 .venv\Scripts\python experiments/phase6_statistics.py --error-rate 0.10 --seed 42
+
+# Phase 7 — Experiment 1: No-Eve vs Full-Eve Benchmark
+.venv\Scripts\python experiments/phase7_eve_comparison.py
+
+# Phase 7 — Experiment 2: Eve Interception Probability Sweep
+.venv\Scripts\python experiments/phase7_eve_probability.py
+
+# Phase 7 — Experiment 3: Statistical Convergence of Intercept-Resend QBER
+.venv\Scripts\python experiments/phase7_convergence.py
 ```
 
 

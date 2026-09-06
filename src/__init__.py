@@ -8,6 +8,7 @@ from .alice import Alice, BB84Signal
 from .bob import Bob, BobMeasurement
 from .config import BB84Config, NoiseModelType
 from .error_injection import inject_classical_bit_errors
+from .eve import Eve, EveInterceptionRecord
 from .key_sifting import SiftingResult, reconcile_bases, sift_from_alice_and_bob, sift_keys
 from .qber import QBERResult, QBERSecurityReport, analyze_qber_security, calculate_qber
 from .quantum_channel import QuantumChannel
@@ -36,6 +37,8 @@ __all__ = [
     "BB84Signal",
     "Bob",
     "BobMeasurement",
+    "Eve",
+    "EveInterceptionRecord",
     "QuantumChannel",
     "SiftingResult",
     "reconcile_bases",

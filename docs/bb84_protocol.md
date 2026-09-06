@@ -259,6 +259,78 @@ Implemented in `src/error_injection.py`:
 
 ---
 
+## 2.6 Phase 7 — Eve Intercept-Resend Attack
+
+The eavesdropping module (`src/eve.py`) implements a genuine quantum intercept-resend attack operating on physical quantum carriers within the transmission channel.
+
+### 1. What an Intercept-Resend Attack Is
+In an intercept-resend attack, an eavesdropper (**Eve**) taps the quantum transmission medium between Alice and Bob:
+1. Eve intercepts Alice's transmitted single-qubit quantum state before it reaches Bob.
+2. Eve performs a projective measurement on the intercepted carrier.
+3. Using the measured classical outcome and her chosen basis, Eve prepares a brand new quantum state.
+4. Eve forwards this replacement quantum state over the channel to Bob.
+
+### 2. Why Eve Must Measure the Quantum State
+By the **No-Cloning Theorem** (Wootters & Zurek, 1982; Dieks, 1982), an unknown, non-orthogonal quantum state cannot be duplicated into an identical copy:
+$$U |\psi\rangle |e\rangle \neq |\psi\rangle |\psi\rangle \quad \forall |\psi\rangle$$
+Eve cannot make a backup copy of Alice's photon, forward the original to Bob unperturbed, and measure her copy later when bases are announced. To extract any classical information from the flying qubit during transit, Eve is fundamentally forced to perform an immediate quantum measurement.
+
+### 3. Why Eve Cannot Know Alice's Basis in Advance
+Alice's basis choices are strictly private classical data stored locally at Alice's station. Alice reveals her basis sequence only during classical basis reconciliation in Phase 5, which occurs **strictly after** Bob has already received and measured all quantum carriers. During transit, Eve faces equal prior probabilities:
+$$P(B_A = Z) = P(B_A = X) = \frac{1}{2}$$
+Eve has no physical means of anticipating Alice's basis and must guess her measurement basis independently at random.
+
+### 4. Why Measuring in the Wrong Basis Disturbs the State
+Quantum mechanics enforces Heisenberg's Uncertainty Principle and Bohr's Complementarity Principle. The computational basis ($Z = \{|0\rangle, |1\rangle\}$) and Hadamard basis ($X = \{|+\rangle, |-\rangle\}$) are **mutually unbiased bases (MUBs)**:
+$$|\langle z_i | x_j \rangle|^2 = \frac{1}{2} \quad \forall i, j \in \{0, 1\}$$
+If Alice prepares $|0\rangle$ (a $Z$-basis eigenstate) and Eve measures along the $X$-basis:
+- The measurement projects the state into either $|+\rangle$ or $|-\rangle$ with equal probability $1/2$.
+- The original quantum state is irreversibly disturbed; all phase and identity memory of $|0\rangle$ is erased.
+
+### 5. Why Eve Prepares a Replacement State
+Because projective quantum measurement is destructive (or absorbs the single photon in optical channels), Eve must resend a physical quantum carrier forward to Bob; otherwise, the absence of photons would cause complete detector absence at Bob's station. Eve prepares an eigenstate matching her own measurement outcome ($r_E \in \{0, 1\}$) and basis ($B_E \in \{Z, X\}$):
+- If Eve measured $0$ in $Z$, she sends $|0\rangle$.
+- If Eve measured $1$ in $Z$, she sends $|1\rangle$.
+- If Eve measured $0$ in $X$, she sends $|+\rangle$.
+- If Eve measured $1$ in $X$, she sends $|-\rangle$.
+
+### 6. Why Alice and Bob Observe Additional Errors
+When Alice and Bob later reconcile bases, they retain only trials where their bases coincided ($B_A = B_B$). In an unperturbed channel, Bob's outcome always agrees with Alice's prepared bit. However, when Eve intercepts and chooses the **wrong basis** ($B_E \neq B_A$):
+- Eve replaces Alice's eigenstate with an eigenstate of the conjugate basis.
+- When Bob measures this replacement in his basis (which matches Alice's $B_B = B_A$), he is measuring a state that is in an equal superposition with respect to his detector.
+- Bob obtains an erroneous bit with probability $1/2$.
+
+### 7. Theoretical QBER Under Full Intercept-Resend (25%)
+For an ideal BB84 system subject to a full intercept-resend attack ($p_{\text{eve}} = 1.0$), the mathematical error probability on sifted key bits is:
+$$P(\text{Eve chooses wrong basis}) = P(B_E \neq B_A) = \frac{1}{2}$$
+$$P(\text{Bob error} \mid \text{wrong Eve basis}) = \frac{1}{2}$$
+$$P(\text{Bob error} \mid \text{matching Eve basis}) = 0$$
+Applying the Law of Total Probability to the sifted key ($B_A = B_B$):
+$$\text{QBER} = P(B_E = B_A) \times 0 + P(B_E \neq B_A) \times P(\text{error} \mid B_E \neq B_A) = \frac{1}{2} \times 0 + \frac{1}{2} \times \frac{1}{2} = \frac{1}{4} = 25\%$$
+Under partial interception with probability $p \in [0.0, 1.0]$:
+$$\text{QBER}(p) = p \times 25.0\%$$
+Because standard QKD abort thresholds are typically set between $8\%$ and $11\%$ (Shor-Preskill bound $\approx 11.0\%$), a full intercept-resend attack ($25\% \gg 11\%$) is detected with certainty.
+
+### 8. Statistical Fluctuations in Experimental Simulations
+The theoretical $25\%$ QBER represents the infinite-sample mathematical expectation:
+$$\mathbb{E}[\text{QBER}] = 0.25$$
+In finite simulations, the observed QBER is an empirical average of independent Bernoulli trials. By the Central Limit Theorem:
+$$\sigma_{\text{QBER}} = \sqrt{\frac{0.25 \times 0.75}{N_{\text{sifted}}}} = \frac{\sqrt{3/16}}{\sqrt{N_{\text{sifted}}}} \approx \frac{0.433}{\sqrt{N_{\text{sifted}}}}$$
+- For $N=500$ signals ($N_{\text{sifted}} \approx 250$), $\sigma \approx 2.74\%$, leading to observed values between $21\%$ and $29\%$.
+- For $N=10,000$ signals ($N_{\text{sifted}} \approx 5,000$), $\sigma \approx 0.61\%$, tightly clustering between $24.0\%$ and $26.0\%$.
+Our simulator does not hardcode $25\%$; the error rate emerges purely from simulating individual quantum state measurements.
+
+### 9. Eavesdropping-Induced Errors vs. Channel Noise
+- **Eavesdropping Disturbances**: Stem from state projection when measuring non-orthogonal quantum states without prior basis knowledge. Eve's disturbance is inherently coupled to the information she extracts.
+- **Environmental Channel Noise**: Arises from thermal fluctuations, fiber polarization drift, decoherence, or optical attenuation. Channel noise corrupts states without any intelligent eavesdropper gaining information.
+- **Security Implications**: Because Alice and Bob cannot distinguish whether an error originated from Eve or environmental noise, QKD protocols conservatively attribute **all** observed QBER to Eve, guaranteeing information-theoretic security.
+
+> [!NOTE]
+> **Idealized Scenario**:
+> This analysis assumes an individual, memoryless intercept-resend attack against single-photon states. Advanced collective or coherent quantum attacks (e.g., using quantum memory and entangling probes) are more sophisticated, but the fundamental principle—that non-orthogonal states cannot be measured without disturbance—underpins all QKD security proofs.
+
+---
+
 ## 3. Protocol Execution Steps
 
 1. **State Preparation (Alice)**:
