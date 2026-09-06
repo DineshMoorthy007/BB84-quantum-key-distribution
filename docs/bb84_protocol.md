@@ -109,13 +109,60 @@ Randomness is required at two levels:
 1. **Bit entropy**: Ensures the final shared key is cryptographically secure and incompressible.
 2. **Basis unpredictability**: Prevents side-channel basis prediction by Eve. Pseudo-random generators must use independent, reproducible local seeds for scientific analysis, while production QKD relies on Quantum Random Number Generators (QRNGs).
 
-### 6. Connection to the Future Bob Component
+### 6. Connection to the Bob Component
 The Alice module encapsulates private classical information while exposing a clean quantum transmission interface:
 - **Transmitted Data**: A list of independent `QuantumCircuit` carrier objects sent through the quantum channel.
 - **Shielded Data**: Alice's internal bit array $A_{\text{raw}}$ and basis array $B_A$ remain sealed.
-In Phase 4, Bob will receive these quantum circuits, generate his own independent random basis sequence $B_B$, perform projective measurements along $B_B$, and record his measured outcomes $B_{\text{raw}}$ without having seen Alice's bases.
+In Phase 4, Bob receives these quantum circuits, generates his own independent random basis sequence $B_B$, performs projective measurements along $B_B$, and records his measured outcomes $B_{\text{raw}}$ without having seen Alice's bases.
 
 ---
+
+## 2.3 Phase 4 — Bob and Quantum Transmission
+
+The Bob component (`src/bob.py`) and Quantum Channel (`src/quantum_channel.py`) establish the receiver and transmission layers of BB84.
+
+### 1. Independent Basis Selection by Bob
+Bob independently selects a random measurement basis $b_{B, i} \in \{Z, X\}$ for every incoming quantum carrier. Like Alice, Bob uses a local, reproducible pseudo-random number generator, guaranteeing that basis choices are uncorrelated between sender and receiver.
+
+### 2. Information Asymmetry (Bob Operates Blind)
+Bob possesses no prior knowledge of Alice's basis choices or bit values. The transmission of quantum states occurs before any classical communication regarding bases. This chronological separation is vital: if Bob knew the bases in advance, an eavesdropper listening to the classical channel could also discover them.
+
+### 3. Projective Measurement Along Bob's Basis
+Upon receiving each single-qubit quantum state from the channel, Bob performs a projective quantum measurement along his chosen basis:
+- If $b_B = Z$: Measurement is performed in the computational basis $\{|0\rangle, |1\rangle\}$.
+- If $b_B = X$: A Hadamard rotation $H$ is applied immediately before measurement, transforming $\{|+\rangle, |-\rangle\}$ onto $\{|0\rangle, |1\rangle\}$.
+Bob records only the sequential index $i$, basis $b_{B, i}$, and classical outcome $r_i \in \{0, 1\}$ in an isolated `BobMeasurement` record.
+
+### 4. Deterministic Bit Recovery on Matching Bases
+In an ideal, noiseless channel without eavesdropping:
+- When $b_A = Z$ and $b_B = Z$:
+  - Alice sends $|0\rangle \implies$ Bob measures $0$ with probability $1.0$.
+  - Alice sends $|1\rangle \implies$ Bob measures $1$ with probability $1.0$.
+- When $b_A = X$ and $b_B = X$:
+  - Alice sends $|+\rangle \implies$ Bob rotates $H|+\rangle = |0\rangle \implies$ measures $0$ with probability $1.0$.
+  - Alice sends $|-\rangle \implies$ Bob rotates $H|-\rangle = |1\rangle \implies$ measures $1$ with probability $1.0$.
+Whenever Alice and Bob select the same basis ($b_A = b_B$), their classical bits are strictly identical.
+
+### 5. Probabilistic Outcomes on Mismatched Bases
+When Alice and Bob select conjugate bases ($b_A \neq b_B$):
+- Alice sends a $Z$-eigenstate ($|0\rangle$ or $|1\rangle$), and Bob measures in $X$. The state in Bob's basis is an equal superposition $\frac{|+\rangle \pm |-\rangle}{\sqrt{2}}$, yielding outcome $0$ or $1$ each with $50\%$ probability.
+- Alice sends an $X$-eigenstate ($|+\rangle$ or $|-\rangle$), and Bob measures in $Z$. The state is $\frac{|0\rangle \pm |1\rangle}{\sqrt{2}}$, yielding outcome $0$ or $1$ each with $50\%$ probability.
+*Crucial Principle*: A basis mismatch is **not** an error or transmission fault; it is an intrinsic consequence of quantum complementarity and mutual unbiasedness.
+
+### 6. Architectural Role of the Quantum Channel
+The `QuantumChannel` abstraction completely decouples physical transmission from sender and receiver logic:
+- Alice produces quantum circuits and pushes them into `QuantumChannel.transmit()`.
+- The channel propagates physical states and returns copies to Bob.
+- This design cleanly encapsulates physical effects: future phases will introduce eavesdropper tapping (Eve) and channel noise channels directly into `QuantumChannel` without modifying either `Alice` or `Bob`.
+
+### 7. Why Basis Reconciliation Must Happen Later
+Alice and Bob cannot reconcile their bases until after all quantum signals have arrived and been measured. Announcing bases during quantum transmission would allow an eavesdropper to measure in the correct basis without inducing disturbance. Only once the quantum channel transmission is finalized do Alice and Bob publicly announce their basis sequences over an authenticated classical channel.
+
+### 8. Why QBER Cannot Be Calculated Before Sifting
+Quantum Bit Error Rate (QBER) measures transmission fidelity and eavesdropping disturbance, defined as the error rate on **matched-basis** transmissions. Across all raw signals, approximately $50\%$ have mismatched bases which inherently disagree half the time (introducing an artificial $25\%$ raw discrepancy). Calculating error rates before discarding mismatched bases produces meaningless statistics. True QBER estimation requires identifying matched-basis indices during basis sifting in Phase 5.
+
+---
+
 
 
 

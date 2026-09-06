@@ -5,7 +5,9 @@ and protocol execution.
 """
 
 from .alice import Alice, BB84Signal
+from .bob import Bob, BobMeasurement
 from .config import BB84Config, NoiseModelType
+from .quantum_channel import QuantumChannel
 from .quantum_primitives import (
     COMPUTATIONAL_BASIS,
     HADAMARD_BASIS,
@@ -29,6 +31,9 @@ from .quantum_primitives import (
 __all__ = [
     "Alice",
     "BB84Signal",
+    "Bob",
+    "BobMeasurement",
+    "QuantumChannel",
     "BB84Config",
     "NoiseModelType",
     "COMPUTATIONAL_BASIS",
@@ -49,5 +54,6 @@ __all__ = [
     "validate_bit",
     "validate_basis",
 ]
+
 
 

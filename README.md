@@ -38,9 +38,10 @@ The project aims to demonstrate how quantum mechanics can be used for secure key
 ## Project Status
 
 - [x] **Phase 1** — Environment, project architecture, and configuration setup completed.
-- [x] **Phase 2** — Fundamental quantum primitives completed (state preparation for $|0\rangle, |1\rangle, |+\rangle, |-\rangle$, projective $Z$/$X$ measurements, statevector analysis, and comprehensive unit tests).
+- [x] **Phase 2** — Fundamental quantum primitives completed (state preparation for |0>, |1>, |+>, |->, projective Z and X basis measurements, statevector analysis, and comprehensive unit tests).
 - [x] **Phase 3** — Alice (Sender) component completed (random bit & basis generation, state encoding into `BB84Signal`, private classical state encapsulation, and unit tests).
-- [ ] **Phase 4** — Bob (Receiver) component & quantum channel transmission (upcoming).
+- [x] **Phase 4** — Bob (Receiver) component & quantum channel transmission completed (independent random basis selection, projective measurement, Alice-to-Bob signal transmission, and integration tests).
+- [ ] **Phase 5** — Classical basis reconciliation & key sifting (upcoming).
 
 ## Project Structure
 
@@ -52,7 +53,7 @@ bb84-quantum-key-distribution/
 ├── noise/           # Quantum channel noise models (depolarizing, bit/phase-flip)
 ├── results/         # Output artifacts (simulation logs, datasets, plots)
 ├── simulator/       # Qiskit Aer backend and circuit execution managers
-├── src/             # Core protocol logic (Alice, quantum primitives, config)
+├── src/             # Core protocol logic (Alice, Bob, QuantumChannel, primitives, config)
 ├── tests/           # Automated pytest test suites
 └── visualization/   # Decoupled plotting routines (Matplotlib)
 ```
@@ -67,7 +68,11 @@ Execute the phase-specific educational demonstration scripts:
 
 # Phase 3 — Alice (Sender) Demonstration
 .venv\Scripts\python experiments/phase3_alice.py --signals 10 --seed 42
+
+# Phase 4 — Alice -> QuantumChannel -> Bob Transmission Demonstration
+.venv\Scripts\python experiments/phase4_alice_bob.py --signals 16 --alice-seed 42 --bob-seed 99
 ```
+
 
 
 ## Running Tests
