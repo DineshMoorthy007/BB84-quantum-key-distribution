@@ -36,6 +36,23 @@ from .quantum_primitives import (
     validate_bit,
 )
 
+from .experiment_framework import (
+    AggregatedExperimentResult,
+    ExperimentConfig,
+    TrialResult,
+    derive_trial_seeds,
+    load_trials_from_csv,
+    run_experiment,
+    run_single_trial,
+    save_aggregated_to_csv,
+    save_trials_to_csv,
+)
+from .statistics import (
+    DescriptiveStats,
+    compute_descriptive_stats,
+    wilson_score_interval,
+)
+
 __all__ = [
     "Alice",
     "BB84Signal",
@@ -79,7 +96,20 @@ __all__ = [
     "measure_state",
     "validate_bit",
     "validate_basis",
+    "DescriptiveStats",
+    "compute_descriptive_stats",
+    "wilson_score_interval",
+    "ExperimentConfig",
+    "TrialResult",
+    "AggregatedExperimentResult",
+    "derive_trial_seeds",
+    "run_single_trial",
+    "run_experiment",
+    "save_trials_to_csv",
+    "save_aggregated_to_csv",
+    "load_trials_from_csv",
 ]
+
 
 
 

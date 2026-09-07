@@ -1,0 +1,4 @@
+condition_name,noise_model,noise_probability,mean_z_basis_qber,mean_x_basis_qber,overall_qber_mean,asymmetry_z_minus_x,interpretation
+Bit-Flip Noise (10%),bit_flip,0.1,0.09016018664101697,0.0,0.04531127469915524,0.09016018664101697,"Z-vulnerable, X-immune"
+Phase-Flip Noise (10%),phase_flip,0.1,0.0,0.10276660312670889,0.051438632985529774,-0.10276660312670889,"X-vulnerable, Z-immune"
+Depolarizing Noise (10%),depolarizing,0.1,0.050427149222806764,0.051591946577618654,0.05110055422600496,-0.0011647973548118903,Isotropic (Symmetric)

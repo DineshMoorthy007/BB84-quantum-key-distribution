@@ -86,12 +86,13 @@ def generate_toeplitz_matrix(
     # where seq has length m + n - 1.
     # When i=0, j=0..n-1: index goes from n-1 down to 0 (first row).
     # When j=0, i=0..m-1: index goes from n-1 up to m+n-2 (first col).
-    matrix = np.zeros((m_int, n_int), dtype=np.int8)
-    for i in range(m_int):
-        for j in range(n_int):
-            matrix[i, j] = random_bits[i - j + (n_int - 1)]
-
-    return matrix
+    # Vectorized Toeplitz indexing: M[i, j] = random_bits[i - j + (n - 1)]
+    idx_matrix = (
+        np.arange(m_int, dtype=np.int32)[:, None]
+        - np.arange(n_int, dtype=np.int32)[None, :]
+        + (n_int - 1)
+    )
+    return random_bits[idx_matrix]
 
 
 def amplify_privacy(
